@@ -367,3 +367,36 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .tag-hint { text-align: center; font-size: 13.5px; color: var(--gold); margin: 4px 0 14px; }
 .result-photo { width: 100%; max-width: 300px; display: block; margin: 0 auto 14px; border-radius: 12px; border: 1px solid var(--line); }
 #palm-video { width: 100%; max-width: 360px; margin: 0 auto 10px; display: block; border-radius: 14px; border: 1px solid var(--line); transform: scaleX(-1); }
+
+/* ---------- 테마 해설 · 파자 ---------- */
+.intro-box {
+  background: linear-gradient(160deg, rgba(61,47,107,.28), var(--panel));
+  border: 1px solid var(--line); border-radius: 12px; margin-bottom: 16px; overflow: hidden;
+}
+.intro-box > summary {
+  cursor: pointer; list-style: none; padding: 14px 16px;
+  color: var(--gold-bright); font-size: 15px; letter-spacing: .5px;
+  display: flex; align-items: center; gap: 8px;
+}
+.intro-box > summary::-webkit-details-marker { display: none; }
+.intro-box > summary::after { content: "▾"; margin-left: auto; color: var(--violet); transition: transform .3s; }
+.intro-box[open] > summary::after { transform: rotate(180deg); }
+.intro-body { padding: 0 18px 18px; }
+.intro-body p { font-size: 14px; color: var(--ink); margin-bottom: 11px; }
+.intro-body p:last-child { margin-bottom: 0; }
+.intro-body b { color: var(--gold-bright); font-weight: 600; }
+
+.paza-card {
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 10px;
+  background: rgba(10, 8, 24, 0.45);
+}
+.paza-head { display: flex; align-items: center; gap: 14px; margin-bottom: 9px; }
+.paza-glyph {
+  font-size: 40px; line-height: 1; color: var(--gold-bright);
+  text-shadow: 0 0 18px rgba(255, 217, 122, 0.35);
+  flex-shrink: 0; width: 52px; text-align: center;
+}
+.paza-meta { font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+.paza-meta b { color: var(--gold); font-size: 15px; }
+.paza-card p { font-size: 14px; color: var(--ink); }

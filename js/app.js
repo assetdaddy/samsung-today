@@ -26,6 +26,16 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 let pendingModule = null; // 프로필 입력 후 이동할 모듈
 
+// 테마 상세 해설 패널 HTML
+function themeIntroHTML(key) {
+  const t = THEME_INTRO[key];
+  if (!t) return '';
+  return `<details class="intro-box">
+    <summary>❔ ${t.title}</summary>
+    <div class="intro-body">${t.body.map(p => `<p>${p}</p>`).join('')}</div>
+  </details>`;
+}
+
 // ---------- 별밭 배경 ----------
 (function starfield() {
   const c = $('#starfield');
@@ -199,6 +209,7 @@ function renderSaju() {
   const s = state.saju, det = state.sajuDetail;
   const stem = STEMS[s.dayStem];
   $('#saju-animal').textContent = `${BRANCHES[s.pillars.year[1]].hanja} · ${s.zodiacAnimal}띠`;
+  $('#saju-intro').innerHTML = themeIntroHTML('saju');
 
   // 1) 원국 표 — 십신·지장간·십이운성까지
   const order = [['hour', '시주(時柱)'], ['day', '일주(日柱)'], ['month', '월주(月柱)'], ['year', '연주(年柱)']];
@@ -223,6 +234,29 @@ function renderSaju() {
     <p>${stem.text}</p>
     <p style="margin-top:10px"><span class="keyword-chip">${det.gyeok || '격국 미상'}</span><span class="keyword-chip">${det.strength}</span>
     <span class="dim">— 월지에서 얻은 그릇의 이름과, 기운의 세기입니다.</span></p>`;
+
+  // 파자(破字) — 원국 여덟 글자를 쪼개 읽기 (중복 글자는 한 번만)
+  const pillarKeys = ['day', 'month', 'year', 'hour']; // 일주를 먼저 (가장 중요)
+  const pLabel = { day: '일간·일지 (나 자신과 그 안방)', month: '월주 (사회·부모)', year: '연주 (뿌리·조상)', hour: '시주 (말년·자식)' };
+  const seenChar = new Set();
+  let pazaCards = '';
+  for (const k of pillarKeys) {
+    const p = s.pillars[k];
+    if (!p) continue;
+    const items = [{ paza: STEM_PAZA[p[0]], role: '천간' }, { paza: BRANCH_PAZA[p[1]], role: '지지' }];
+    for (const it of items) {
+      if (seenChar.has(it.paza.char)) continue;
+      seenChar.add(it.paza.char);
+      pazaCards += `<div class="paza-card">
+        <div class="paza-head"><span class="paza-glyph">${it.paza.char}</span>
+          <span class="paza-meta"><b>${it.paza.char}</b> — ${it.paza.shape}</span></div>
+        <p>${it.paza.read}</p></div>`;
+    }
+  }
+  $('#saju-paza').innerHTML = `
+    <h3>글자 속에 숨은 그림 — 파자(破字) 풀이</h3>
+    <p class="dim" style="margin-bottom:12px">한자를 뜻이 아니라 <b>생김새</b>로 다시 읽습니다. 卯(묘)가 양쪽으로 열린 문이라 속을 훤히 열어 보이듯 — 당신의 여덟 글자에 숨은 그림을 하나씩 들춰 봅니다. (같은 글자는 한 번만)</p>
+    ${pazaCards}`;
 
   // 3) 일주 심층 — 배우자궁과 그 별
   const dj = det.detail.day;
@@ -316,6 +350,7 @@ $('#btn-saju-back').addEventListener('click', () => { renderHub(); show('intro')
 // ---------- 점성 ----------
 function renderAstro() {
   const z = state.zodiac, mp = state.moon;
+  $('#astro-intro').innerHTML = themeIntroHTML('astro');
   $('#astro-zodiac').innerHTML = `
     <div class="zodiac-hero">
       <div class="zsym">${z.symbol}</div>
@@ -382,6 +417,7 @@ function initFace() {
   $('#face-result').innerHTML = '';
   $('#face-tag-hint').hidden = true;
   $('#btn-face-back').style.display = 'none';
+  $('#face-intro').innerHTML = themeIntroHTML('face');
   setupFaceCamera();
   $('#face-parts').innerHTML = FACE_PARTS.map(part => `
     <div class="face-part" data-part="${part.id}">
@@ -460,6 +496,7 @@ function initPalm() {
   $('#btn-palm-back').style.display = 'none';
   const c = $('#palm-canvas');
   c.width = 440; c.height = 520;
+  $('#palm-intro').innerHTML = themeIntroHTML('palm');
   setupPalmCamera();
   drawPalmBase();
   updatePalmUI();
@@ -597,6 +634,7 @@ function initIching() {
   iching.lines = [];
   state.done.iching = false;
   iching.rng = seededRandom((state.seed || 'guest') + ':iching:' + Date.now());
+  $('#iching-intro').innerHTML = themeIntroHTML('iching');
   $('#hex-lines').innerHTML = '';
   $('#iching-result').innerHTML = '';
   $('#btn-cast').style.display = 'block';
@@ -658,6 +696,7 @@ function initTarot() {
   state.done.tarot = false;
   tarot.picked = 0;
   tarot.rng = seededRandom((state.seed || 'guest') + ':tarot:' + Date.now());
+  $('#tarot-intro').innerHTML = themeIntroHTML('tarot');
   tarot.order = TAROT.map((_, i) => i);
   for (let i = tarot.order.length - 1; i > 0; i--) {
     const j = Math.floor(tarot.rng() * (i + 1));

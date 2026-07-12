@@ -111,6 +111,34 @@ const CONTENT_TABLES = [
   _objTable('palm', '손금 3선', () => PALM_LINES,
     e => e.obj.name,
     [['long', '길 때'], ['short', '짧을 때'], ['curvy', '곡선일 때'], ['straight', '직선일 때']]),
+
+  _objTable('stemPaza', '파자 · 천간 10', () => STEM_PAZA,
+    e => e.obj.char,
+    [['shape', '글자 모양'], ['read', '파자 해석']]),
+
+  _objTable('branchPaza', '파자 · 지지 12', () => BRANCH_PAZA,
+    e => e.obj.char,
+    [['shape', '글자 모양'], ['read', '파자 해석']]),
+
+  // 테마 상세 해설 (본문은 문단 배열 → 빈 줄로 구분해 편집)
+  {
+    key: 'themeIntro', label: '테마 상세 해설',
+    count: () => Object.keys(THEME_INTRO).length,
+    rows() {
+      return Object.keys(THEME_INTRO).map(k => ({
+        id: k, name: THEME_INTRO[k].title,
+        fields: [
+          { field: 'title', flabel: '제목', value: THEME_INTRO[k].title },
+          { field: 'body', flabel: '본문 (문단 사이는 빈 줄로 구분)', value: THEME_INTRO[k].body.join('\n\n') },
+        ],
+      }));
+    },
+    set(id, field, value) {
+      if (!THEME_INTRO[id]) return;
+      if (field === 'body') THEME_INTRO[id].body = value.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+      else THEME_INTRO[id][field] = value;
+    },
+  },
 ];
 
 // ---------- 오버라이드 저장/적용 ----------
