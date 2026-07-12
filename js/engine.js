@@ -386,3 +386,166 @@ function drawStar(ctx, x, y, spikes, outerR, innerR, color) {
   ctx.fill();
   ctx.restore();
 }
+
+/* ============================================================
+   사주 심화 분석
+   ============================================================ */
+
+// 십신 10종 판별: 일간 대비 대상 천간
+function tenGodOf(dayStem, targetStem) {
+  const me = STEMS[dayStem], t = STEMS[targetStem];
+  const same = me.yang === t.yang;
+  if (t.el === me.el) return same ? '비견' : '겁재';
+  if (GENERATES[me.el] === t.el) return same ? '식신' : '상관';
+  if (CONTROLS[me.el] === t.el) return same ? '편재' : '정재';
+  if (CONTROLS[t.el] === me.el) return same ? '편관' : '정관';
+  return same ? '편인' : '정인';
+}
+
+// 십이운성: 일간 기준 지지의 운성
+function twelveStage(dayStem, branch) {
+  const [start, dir] = STAGE_START[dayStem];
+  const idx = ((branch - start) * dir % 12 + 12) % 12;
+  return TWELVE_STAGES[idx];
+}
+
+// 60갑자 index (천간 s, 지지 b)
+function sexagenaryIndex(s, b) {
+  for (let i = 0; i < 60; i++) if (i % 10 === s && i % 12 === b) return i;
+  return 0;
+}
+
+function calcSajuDetail(saju, birth, gender) {
+  const { pillars } = saju;
+  const dStem = saju.dayStem;
+  const keys = ['year', 'month', 'day', 'hour'];
+
+  // 기둥별: 천간 십신 / 지지 본기 십신 / 지장간 / 십이운성
+  const detail = {};
+  for (const k of keys) {
+    const p = pillars[k];
+    if (!p) { detail[k] = null; continue; }
+    const hidden = HIDDEN_STEMS[p[1]];
+    detail[k] = {
+      stemGod: k === 'day' ? '일간(나)' : tenGodOf(dStem, p[0]),
+      branchGod: tenGodOf(dStem, hidden[hidden.length - 1]),
+      hidden,
+      stage: twelveStage(dStem, p[1]),
+    };
+  }
+
+  // 십신 10종 카운트 (천간 + 지지 본기, 일간 제외)
+  const godCount = {};
+  for (const g of Object.keys(TEN_GODS_10)) godCount[g] = 0;
+  for (const k of keys) {
+    const p = pillars[k];
+    if (!p) continue;
+    if (k !== 'day') godCount[tenGodOf(dStem, p[0])]++;
+    const hidden = HIDDEN_STEMS[p[1]];
+    godCount[tenGodOf(dStem, hidden[hidden.length - 1])]++;
+  }
+
+  // 신강약: 인성·비겁 가중 점수 (월지3 · 일지2 · 시지1.5 · 연지1 · 천간 각1)
+  const W = { year: [1, 1], month: [1, 3], day: [0, 2], hour: [1, 1.5] };
+  let support = 0, total = 0;
+  for (const k of keys) {
+    const p = pillars[k];
+    if (!p) continue;
+    const [ws, wb] = W[k];
+    if (ws) {
+      total += ws;
+      const g = TEN_GODS_10[tenGodOf(dStem, p[0])].group;
+      if (g === '비겁' || g === '인성') support += ws;
+    }
+    total += wb;
+    const hidden = HIDDEN_STEMS[p[1]];
+    const gb = TEN_GODS_10[tenGodOf(dStem, hidden[hidden.length - 1])].group;
+    if (gb === '비겁' || gb === '인성') support += wb;
+  }
+  const ratio = support / total;
+  const strength = ratio >= 0.55 ? '신강' : ratio <= 0.45 ? '신약' : '중화';
+
+  // 용신(간이 억부법)
+  const groupCount = { 비겁: 0, 식상: 0, 재성: 0, 관성: 0, 인성: 0 };
+  for (const [g, n] of Object.entries(godCount)) groupCount[TEN_GODS_10[g].group] += n;
+  const groupToEl = (grp) => {
+    const me = STEMS[dStem].el;
+    if (grp === '비겁') return me;
+    if (grp === '식상') return GENERATES[me];
+    if (grp === '재성') return CONTROLS[me];
+    if (grp === '관성') return ELEMENTS.find(e => CONTROLS[e] === me);
+    return ELEMENTS.find(e => GENERATES[e] === me);
+  };
+  let yongGroup;
+  if (strength === '신강') {
+    yongGroup = ['식상', '재성', '관성'].sort((a, b) => groupCount[b] - groupCount[a])[0];
+  } else if (strength === '신약') {
+    yongGroup = ['인성', '비겁'].sort((a, b) => groupCount[b] - groupCount[a])[0];
+  } else {
+    yongGroup = Object.entries(groupCount).sort((a, b) => a[1] - b[1])[0][0]; // 가장 부족한 기운 보충
+  }
+  const yongEl = groupToEl(yongGroup);
+
+  // 격국(간이): 월지 본기 십신
+  let gyeok = null;
+  if (pillars.month) {
+    const mh = HIDDEN_STEMS[pillars.month[1]];
+    const mg = tenGodOf(dStem, mh[mh.length - 1]);
+    gyeok = mg === '비견' ? '건록격' : mg === '겁재' ? '양인격' : mg + '격';
+  }
+
+  // 신살
+  const branches = keys.filter(k => pillars[k]).map(k => pillars[k][1]);
+  const sinsal = [];
+  const ce = CHEONEUL[dStem] || [];
+  if (branches.some(b => ce.includes(b))) sinsal.push('천을귀인');
+  const baseBranches = [pillars.year[1], pillars.day[1]];
+  for (const name of ['역마', '도화', '화개']) {
+    if (baseBranches.some(base => branches.includes(SAMHAP_TARGET[SAMHAP[base]][name]))) {
+      if (!sinsal.includes(name)) sinsal.push(name);
+    }
+  }
+  if (YANGIN[dStem] !== undefined && branches.includes(YANGIN[dStem])) sinsal.push('양인');
+  const dayPair = [pillars.day[0], pillars.day[1]];
+  if (GOEGANG.some(([s, b]) => s === dayPair[0] && b === dayPair[1])) sinsal.push('괴강');
+  if (BAEKHO.some(([s, b]) => s === dayPair[0] && b === dayPair[1])) sinsal.push('백호');
+
+  // 대운 (성별 필요: 양남음녀 순행)
+  let daeun = null;
+  if (gender === 'M' || gender === 'F') {
+    const yangYear = STEMS[pillars.year[0]].yang;
+    const forward = (yangYear && gender === 'M') || (!yangYear && gender === 'F');
+    // 대운수: 다음/이전 절입일까지 일수 ÷ 3
+    const { y, m, d } = birth;
+    let target;
+    if (forward) {
+      target = d < TERM_DAYS[m] ? Date.UTC(y, m - 1, TERM_DAYS[m])
+        : (m === 12 ? Date.UTC(y + 1, 0, TERM_DAYS[1]) : Date.UTC(y, m, TERM_DAYS[m === 12 ? 1 : m + 1]));
+    } else {
+      target = d >= TERM_DAYS[m] ? Date.UTC(y, m - 1, TERM_DAYS[m])
+        : (m === 1 ? Date.UTC(y - 1, 11, TERM_DAYS[12]) : Date.UTC(y, m - 2, TERM_DAYS[m - 1]));
+    }
+    const gap = Math.abs(target - Date.UTC(y, m - 1, d)) / 86400000;
+    const startAge = Math.min(10, Math.max(1, Math.round(gap / 3)));
+    const mIdx = sexagenaryIndex(pillars.month[0], pillars.month[1]);
+    const list = [];
+    for (let i = 1; i <= 8; i++) {
+      const idx = ((mIdx + (forward ? i : -i)) % 60 + 60) % 60;
+      const s = idx % 10, b = idx % 12;
+      list.push({
+        fromAge: startAge + (i - 1) * 10,
+        stem: s, branch: b,
+        god: tenGodOf(dStem, s),
+        stage: twelveStage(dStem, b),
+      });
+    }
+    daeun = { forward, startAge, list };
+  }
+
+  // 세운(올해)
+  const nowY = new Date().getFullYear();
+  const ys = ((nowY - 4) % 10 + 10) % 10, yb = ((nowY - 4) % 12 + 12) % 12;
+  const seun = { year: nowY, stem: ys, branch: yb, god: tenGodOf(dStem, ys), stage: twelveStage(dStem, yb) };
+
+  return { detail, godCount, groupCount, strength, ratio, yongGroup, yongEl, gyeok, sinsal, daeun, seun };
+}
