@@ -1,0 +1,15 @@
+{
+  "appId": "com.fable.chilmun",
+  "appName": "칠문",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https"
+  },
+  "backgroundColor": "#0a0818",
+  "plugins": {
+    "SplashScreen": {
+      "backgroundColor": "#0a0818",
+      "showSpinner": false
+    }
+  }
+}

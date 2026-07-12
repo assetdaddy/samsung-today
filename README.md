@@ -73,6 +73,15 @@
 - **손금**: 손바닥을 촬영/업로드 → **그 사진 위에** 세 손금을 덧그려 길이·곡률 분석
 - 카메라 미지원 기기에서는 파일 업로드로 폴백됩니다.
 
+
+## 모바일 앱 (PWA + Capacitor)
+
+칠문은 **설치형 모바일 앱**입니다. 자세한 안내는 [`MOBILE.md`](MOBILE.md).
+
+- **PWA(권장, 빌드 불필요)**: HTTPS로 호스팅하면 폰에서 홈 화면에 설치됩니다. 대문의 "📲 홈 화면에 앱 설치" 버튼(Android) 또는 Safari 공유→"홈 화면에 추가"(iOS). 설치 후 **전체화면·오프라인·홈 아이콘(七)·노치 안전영역** 대응. 카메라(관상·손금)도 HTTPS에서 동작.
+  - 구성: `manifest.webmanifest`, `sw.js`(앱 셸 오프라인 캐시), `icons/`(192·512·마스커블·애플터치), 상태바 색상·standalone 메타, `#open=saju` 홈화면 바로가기.
+- **네이티브(APK/IPA)**: 같은 코드를 **Capacitor**로 감싸 스토어 배포. `capacitor.config.json`·`package.json` 준비됨 — `npm install && npm run cap:add:android && npm run cap:sync` 후 Android Studio/Xcode에서 빌드.
+
 ## 실행
 
 빌드·서버 불필요. 정적 파일이므로 그냥 열면 됩니다.

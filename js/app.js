@@ -1055,6 +1055,15 @@ window.onContentRefreshed = () => { try { renderHub(); } catch (_) {} };
 // ---------- 시작 ----------
 (function boot() {
   const hash = location.hash;
+  // 홈화면 바로가기(#open=saju 등)
+  const openMatch = hash.match(/^#open=(\w+)$/);
+  if (openMatch) {
+    renderHub();
+    const id = openMatch[1];
+    history.replaceState(null, '', location.pathname);
+    if (MODULES.some(m => m.id === id) || EXTRA_MODULES.some(m => m.id === id) || id === 'weave') { openModule(id); return; }
+    show('intro'); return;
+  }
   if (hash.startsWith('#s=')) {
     const d = decodeSession(hash);
     if (d) {

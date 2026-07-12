@@ -486,3 +486,28 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .stage-badge.strong { color: #8fe0a8; border-color: rgba(95,184,120,.5); }
 .stage-badge.weak { color: #f0a59e; border-color: rgba(224,90,78,.5); }
 .study-card { margin-bottom: 8px; }
+
+/* ---------- 모바일 앱(PWA) 대응 ---------- */
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: contain; -webkit-touch-callout: none; }
+/* 노치·홈바 안전영역 */
+#app {
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+}
+/* 설치형(standalone)일 때 상단 여백 살짝 더 */
+@media (display-mode: standalone) {
+  #screen-intro { padding-top: 5vh; }
+}
+button, .hub-card, .face-opt, .tcard-back, .tab { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+/* 작은 폰 최적화 */
+@media (max-width: 380px) {
+  .hc-icon { font-size: 22px; width: 32px; }
+  .hc-name { font-size: 15px; }
+  .hc-desc { font-size: 11.5px; }
+  .pillar .glyph { font-size: 22px; }
+  .god-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .god-cell .gname { font-size: 11px; }
+}

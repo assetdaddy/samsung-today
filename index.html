@@ -2,9 +2,18 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <title>칠문(七門) — 페이블의 운명 점방</title>
-<meta name="description" content="사주명리 · 점성 · 관상 · 손금 · 주역 · 타로 — 원하는 문만 골라 보는 운명 점방">
+<meta name="description" content="사주명리 · 점성 · 관상 · 손금 · 주역 · 타로 · 궁합 — 원하는 문만 골라 보는 운명 점방">
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0818">
+<link rel="icon" href="icons/favicon-64.png" sizes="64x64" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="칠문">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -21,6 +30,7 @@
     <div id="profile-chip"></div>
     <div id="hub-cards"></div>
     <p class="disclaimer">※ 본 점방의 풀이는 전통 상수(象數)를 빌린 이야기이며, 재미와 성찰을 위한 것입니다.</p>
+    <button class="primary" id="btn-install" style="display:none;max-width:320px;margin:20px auto 0">📲 홈 화면에 앱 설치</button>
     <p class="admin-link"><a href="admin.html">🛠 운영자 설명서 · 콘텐츠 DB 관리</a></p>
   </section>
 
@@ -230,5 +240,28 @@
 <script src="js/engine.js"></script>
 <script src="js/content-db.js"></script>
 <script src="js/app.js"></script>
+<script>
+  // PWA: 서비스워커 등록 (file:// 에서는 건너뜀)
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+  // 설치 프롬프트
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredPrompt = e;
+    const b = document.getElementById('btn-install');
+    if (b) b.style.display = 'block';
+  });
+  document.getElementById('btn-install').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('btn-install').style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('btn-install'); if (b) b.style.display = 'none';
+  });
+</script>
 </body>
 </html>

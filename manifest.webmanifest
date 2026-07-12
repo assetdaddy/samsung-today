@@ -1,0 +1,24 @@
+{
+  "name": "칠문 — 페이블의 운명 점방",
+  "short_name": "칠문",
+  "description": "사주·점성·관상·손금·주역·타로·궁합을 한자리에서 보는 운명 점방",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0818",
+  "theme_color": "#0a0818",
+  "categories": ["lifestyle", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "사주명리", "short_name": "사주", "url": "./index.html#open=saju" },
+    { "name": "타로", "short_name": "타로", "url": "./index.html#open=tarot" },
+    { "name": "궁합", "short_name": "궁합", "url": "./index.html#open=gunghap" }
+  ]
+}
