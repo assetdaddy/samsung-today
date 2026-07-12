@@ -75,12 +75,17 @@
   </div>
   <div class="tabs">
     <div class="tab active" data-view="manual">📘 설명서 (판정 규칙)</div>
+    <div class="tab" data-view="study">📚 용어 공부</div>
     <div class="tab" data-view="db">🗄 콘텐츠 DB 관리</div>
   </div>
 </header>
 
 <main>
   <section class="view active" id="view-manual"></section>
+  <section class="view" id="view-study">
+    <div class="toolbar"><input type="search" id="study-search" placeholder="🔍 용어·키워드로 찾기 (예: 정인, 건록, 도화)"></div>
+    <div id="study-body"></div>
+  </section>
   <section class="view" id="view-db">
     <div class="toolbar">
       <input type="search" id="db-search" placeholder="🔍 항목·본문 내용으로 필터…">
@@ -361,6 +366,71 @@ document.getElementById('db-reset').addEventListener('click', ()=>{
   location.reload();
 });
 
+/* ================= 용어 공부 (사전) ================= */
+function studyCard(title, sub, badge, rows){
+  return `<details class="tbl study-card" data-hay="${escapeAttr((title+' '+sub+' '+rows.map(r=>r[1]).join(' ')).toLowerCase())}">
+    <summary><span style="color:var(--gold-b)">${title}</span> <span class="cnt">${sub||''}</span>${badge?`<span class="pill" style="margin-left:auto">${badge}</span>`:''}</summary>
+    <div class="rows" style="padding:12px 16px">
+      ${rows.map(([lab,val])=>`<p style="margin:0 0 8px"><b style="color:var(--gold);display:inline-block;min-width:76px">${lab}</b> ${escapeHTML(val)}</p>`).join('')}
+    </div></details>`;
+}
+function buildStudy(){
+  const V = document.getElementById('study-body');
+  let h = '';
+
+  h += `<h2>십신(十神) — 열 개의 별</h2>
+  <p class="note">일간(나)과 다른 글자의 관계. 각 별의 심리·강점·그림자(과다)·직업·관계를 익히면 사주 해석의 8할이 잡힙니다.</p>`;
+  h += Object.keys(TEN_GODS_10).map(g=>{
+    const i=TEN_GODS_10[g], d=TEN_GODS_DEEP[g];
+    return studyCard(`${g} ${i.hanja}`, i.short, i.group, [
+      ['키워드', d.keywords.join(' · ')],
+      ['심리', d.mind],['강점', d.light],['그림자', d.shadow],['직업', d.job],['관계', d.relation],
+    ]);
+  }).join('');
+
+  h += `<h2>십이운성(十二運星) — 열두 생애 단계</h2>
+  <p class="note">일간이 각 지지에서 거치는 생·로·병·사. 건록·제왕은 왕성, 병·사·묘·절은 잦아드는 자리입니다.</p>`;
+  h += TWELVE_STAGES.map(st=>{
+    const d=STAGE_DEEP[st];
+    return studyCard(`${st} ${d.hanja}`, d.keyword, '', [
+      ['단계', d.phase],['성향', d.trait],['자리별', d.pos],['주의', d.caution],
+    ]);
+  }).join('');
+
+  h += `<h2>신살(神殺) — 특별한 별</h2>
+  <p class="note">길신은 살려 쓰고, 흉살은 직업·전문성으로 승화하면 무기가 됩니다.</p>`;
+  h += Object.keys(SINSAL_INFO).map(n=>{
+    const i=SINSAL_INFO[n];
+    return studyCard(`${n} ${i.hanja}`, i.keyword, i.kind, [
+      ['의미', i.meaning],['좋게 쓰면', i.good],['과하면', i.bad],['해석 tip', i.advice],
+    ]);
+  }).join('');
+
+  h += `<h2>오행(五行) — 다섯 기운</h2>`;
+  h += ELEMENTS.map(el=>{
+    const i=ELEMENT_INFO[el];
+    return studyCard(`${el} ${i.hanja}`, i.virtue, `${i.season}·${i.dir}`, [
+      ['강할 때', i.strongText],['보완법', i.weakText],['상생', `${el}→${GENERATES[el]}`],['상극', `${el}→${CONTROLS[el]}`],
+    ]);
+  }).join('');
+
+  h += `<h2>천간·지지 파자(破字)</h2>
+  <p class="note">글자를 뜻이 아니라 생김새로 읽는 법. 卯=열린 문→소통, 처럼 모양에서 성정을 읽습니다.</p>`;
+  h += STEMS.map((s,i)=>studyCard(`${s.kr}${s.hanja}`, `천간·${s.el}`, '', [['모양', STEM_PAZA[i].shape],['풀이', STEM_PAZA[i].read]])).join('');
+  h += BRANCHES.map((b,i)=>studyCard(`${b.kr}${b.hanja}`, `지지·${b.animal}띠`, '', [['모양', BRANCH_PAZA[i].shape],['풀이', BRANCH_PAZA[i].read]])).join('');
+
+  V.innerHTML = h;
+
+  document.getElementById('study-search').addEventListener('input', e=>{
+    const q = e.target.value.trim().toLowerCase();
+    V.querySelectorAll('.study-card').forEach(c=>{
+      const hit = !q || c.dataset.hay.includes(q);
+      c.classList.toggle('hidden', !hit);
+      if (q && hit) c.open = true;
+    });
+  });
+}
+
 // ----- DB 연동(원격) -----
 (function initRemote(){
   const cfg = getStoreCfg();
@@ -415,6 +485,7 @@ window.addEventListener('beforeunload', e=>{ if(dirty){ e.preventDefault(); e.re
 
 // 초기 렌더
 buildManual();
+buildStudy();
 buildDB();
 const savedCount = Object.values(overrides).reduce((a,o)=>a+Object.keys(o).length,0);
 setStatus(savedCount ? `저장된 재정의 ${savedCount}개 적용 중` : '기본 콘텐츠 (재정의 없음)');

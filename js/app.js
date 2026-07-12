@@ -364,11 +364,46 @@ function renderSaju() {
     ${presentGods.map(g => deepCard(g, g === topGod)).join('')}
     <p class="dim" style="margin-top:10px">※ 없는 십신은 그 분야의 인연이 옅다는 뜻이지 결핍이 아닙니다 — 대운·세운으로 채워지는 자리입니다.</p>`;
 
-  // 7) 신살
+  // 6.5) 십이운성 심층 — 네 기둥의 기세
+  const stageKind = { 장생:'왕성', 관대:'왕성', 건록:'왕성', 제왕:'왕성', 목욕:'중간', 쇠:'중간', 양:'중간', 태:'약함', 병:'약함', 사:'약함', 묘:'약함', 절:'약함' };
+  const stageOrder = [['year','연주·초년'],['month','월주·청년'],['day','일주·중년'],['hour','시주·말년']];
+  $('#saju-stages').innerHTML = `
+    <h3>십이운성(十二運星) — 나의 기운이 흐르는 열두 생애</h3>
+    <p class="dim" style="margin-bottom:12px">일간(나)이 각 기둥의 지지에서 <b>생·로·병·사</b> 어느 단계에 놓이는지 봅니다. 인생 시기별로 기운이 왕성한지 잦아드는지를 읽는 지표입니다.</p>
+    ${stageOrder.map(([k, label]) => {
+      const p = s.pillars[k]; if (!p) return '';
+      const st = det.detail[k].stage, deep = STAGE_DEEP[st];
+      return `<details class="god-deep">
+        <summary><span class="gd-name">${st} <span class="gd-hanja">${deep.hanja}</span></span>
+          <span class="gd-cnt">${label}</span><span class="stage-badge ${stageKind[st]==='왕성'?'strong':stageKind[st]==='약함'?'weak':''}">${stageKind[st]}</span></summary>
+        <div class="gd-body">
+          <p class="dim" style="margin-bottom:8px">「${deep.keyword}」 — ${deep.phase}</p>
+          <p><b class="gd-lab">성향</b> ${deep.trait}</p>
+          <p><b class="gd-lab">이 자리</b> ${deep.pos}</p>
+          <p><b class="gd-lab shadow">주의</b> ${deep.caution}</p>
+        </div>
+      </details>`;
+    }).join('')}`;
+
+  // 7) 신살 심층
   $('#saju-sinsal').innerHTML = `
     <h3>신살(神殺) — 팔자에 깃든 특별한 별</h3>
+    <p class="dim" style="margin-bottom:12px">타고난 기운의 무늬입니다. 길신은 살려 쓰고, 흉살은 <b>직업·전문성으로 승화</b>하면 오히려 무기가 됩니다 — 살(殺)은 없애는 게 아니라 다스리는 것입니다.</p>
     ${det.sinsal.length
-      ? det.sinsal.map(name => `<p style="margin-bottom:8px"><span class="keyword-chip">${name} ${SINSAL_INFO[name].hanja}</span><br>${SINSAL_INFO[name].text}</p>`).join('')
+      ? det.sinsal.map(name => {
+          const info = SINSAL_INFO[name];
+          const kindCls = info.kind === '길신' ? 'good' : info.kind === '흉살' ? 'bad' : '';
+          return `<details class="god-deep">
+            <summary><span class="gd-name">${name} <span class="gd-hanja">${info.hanja}</span></span>
+              <span class="gd-cnt">${info.keyword}</span><span class="stage-badge ${kindCls==='good'?'strong':kindCls==='bad'?'weak':''}">${info.kind}</span></summary>
+            <div class="gd-body">
+              <p>${info.meaning}</p>
+              <p><b class="gd-lab light">좋게 쓰면</b> ${info.good}</p>
+              <p><b class="gd-lab shadow">과하면</b> ${info.bad}</p>
+              <p><b class="gd-lab">해석 tip</b> ${info.advice}</p>
+            </div>
+          </details>`;
+        }).join('')
       : '<p class="dim">도드라진 신살 없이 담백한 원국입니다 — 살(殺)에 흔들리지 않고 제 길을 가는 팔자입니다.</p>'}`;
 
   // 8) 대운

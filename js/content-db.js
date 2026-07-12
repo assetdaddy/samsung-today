@@ -61,7 +61,11 @@ const CONTENT_TABLES = [
 
   _objTable('sinsal', '신살(神殺)', () => SINSAL_INFO,
     e => `${e.id} ${e.obj.hanja}`,
-    [['text', '해석']]),
+    [['meaning', '의미·유래'], ['good', '좋게 쓰면'], ['bad', '과하면'], ['advice', '해석 tip'], ['text', '요약']]),
+
+  _objTable('stageDeep', '십이운성 심층', () => STAGE_DEEP,
+    e => `${e.id} ${e.obj.hanja}`,
+    [['phase', '단계 비유'], ['trait', '성향'], ['pos', '자리별 뜻'], ['caution', '주의']]),
 
   _objTable('stage', '십이운성(十二運星)', () => STAGE_TEXT,
     e => e.id,
@@ -111,6 +115,10 @@ const CONTENT_TABLES = [
   _objTable('palm', '손금 3선', () => PALM_LINES,
     e => e.obj.name,
     [['long', '길 때'], ['short', '짧을 때'], ['curvy', '곡선일 때'], ['straight', '직선일 때']]),
+
+  _objTable('godDeep', '십신 심층', () => TEN_GODS_DEEP,
+    e => e.id,
+    [['mind', '심리'], ['light', '강점'], ['shadow', '그림자(과다)'], ['job', '직업'], ['relation', '관계']]),
 
   _objTable('stemPaza', '파자 · 천간 10', () => STEM_PAZA,
     e => e.obj.char,

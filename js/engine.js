@@ -509,6 +509,16 @@ function calcSajuDetail(saju, birth, gender) {
   const dayPair = [pillars.day[0], pillars.day[1]];
   if (GOEGANG.some(([s, b]) => s === dayPair[0] && b === dayPair[1])) sinsal.push('괴강');
   if (BAEKHO.some(([s, b]) => s === dayPair[0] && b === dayPair[1])) sinsal.push('백호');
+  // 원진(元嗔): 원국 지지 쌍
+  if (WONJIN.some(([a, b]) => branches.includes(a) && branches.includes(b))) sinsal.push('원진');
+  // 홍염(紅艶) / 문창귀인(文昌貴人): 일간 기준 지지
+  if (HONGYEOM[dStem] !== undefined && branches.includes(HONGYEOM[dStem])) sinsal.push('홍염');
+  if (MUNCHANG[dStem] !== undefined && branches.includes(MUNCHANG[dStem])) sinsal.push('문창귀인');
+  // 공망(空亡): 일주 순(旬) 기준 빈 두 지지가 연·월·시지에 있으면
+  const headBranch = ((pillars.day[1] - dStem) % 12 + 12) % 12;
+  const voidBranches = [(headBranch + 10) % 12, (headBranch + 11) % 12];
+  const otherBranches = ['year', 'month', 'hour'].filter(k => pillars[k]).map(k => pillars[k][1]);
+  if (otherBranches.some(b => voidBranches.includes(b))) sinsal.push('공망');
 
   // 대운 (성별 필요: 양남음녀 순행)
   let daeun = null;
