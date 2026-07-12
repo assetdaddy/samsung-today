@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>칠문(七門) — 페이블의 운명 점방</title>
+<meta name="description" content="사주명리 · 점성 · 관상 · 손금 · 주역 · 타로, 일곱 문을 지나 하나의 우화로 직조되는 운명 리딩">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<div id="app">
+  <div id="gate-progress" style="display:none"></div>
+
+  <!-- 대문 -->
+  <section class="screen visible" id="screen-intro">
+    <div class="lantern">🏮</div>
+    <h1 class="title">칠문</h1>
+    <div class="subtitle">七門 · 페이블의 운명 점방</div>
+    <p class="desc">
+      동서고금의 일곱 점술이 한 지붕 아래 모였습니다.<br>
+      일곱 개의 문을 차례로 지나면, 흩어져 있던 점괘들이<br>
+      한 장의 <b style="color:var(--gold-bright)">운명 문장(紋章)</b>과
+      한 편의 <b style="color:var(--gold-bright)">우화(寓話)</b>로 직조됩니다.
+    </p>
+    <div class="seven-list">
+      <span>☯ 사주명리</span><span>✦ 점성</span><span>👁 관상</span>
+      <span>🖐 손금</span><span>䷀ 주역</span><span>🂠 타로</span><span>🧵 직조</span>
+    </div>
+    <button class="primary" id="btn-enter" style="max-width:320px;margin:34px auto 0">점방에 들다</button>
+    <p class="disclaimer">※ 본 점방의 풀이는 전통 상수(象數)를 빌린 이야기이며, 재미와 성찰을 위한 것입니다.</p>
+  </section>
+
+  <!-- 1문: 문패 -->
+  <section class="screen" id="screen-info">
+    <div class="gate-hanja">第一門 · 門牌</div>
+    <div class="gate-title">문패의 문</div>
+    <p class="gate-sub">그대가 누구인지, 언제 세상에 왔는지 문패에 적어주세요.</p>
+    <div class="panel">
+      <div class="form-row">
+        <label>이름 (또는 별호)</label>
+        <input type="text" id="in-name" maxlength="12" placeholder="비워두면 '나그네'로 불립니다">
+      </div>
+      <div class="form-row">
+        <label>생년월일 (양력)</label>
+        <input type="date" id="in-birth" min="1900-01-01" max="2100-12-31">
+      </div>
+      <div class="form-row">
+        <label>태어난 시각</label>
+        <input type="time" id="in-time">
+        <div class="check-row">
+          <input type="checkbox" id="chk-hour-unknown"><label for="chk-hour-unknown" style="color:var(--ink-dim);margin:0">태어난 시간을 모릅니다 (시주 없이 세 기둥으로 봅니다)</label>
+        </div>
+      </div>
+    </div>
+    <button class="primary" id="btn-info-next">첫 번째 문을 열다</button>
+  </section>
+
+  <!-- 2문: 사주 -->
+  <section class="screen" id="screen-saju">
+    <div class="gate-hanja">第二門 · 四柱命理</div>
+    <div class="gate-title">여덟 글자의 문</div>
+    <p class="gate-sub">태어난 순간, 하늘과 땅이 그대에게 새긴 여덟 글자 — <span id="saju-animal"></span></p>
+    <div class="pillars" id="saju-pillars"></div>
+    <div class="panel" id="saju-daymaster"></div>
+    <div class="panel" id="saju-elements"></div>
+    <div class="panel" id="saju-gods"></div>
+    <button class="primary" id="btn-saju-next">별의 문으로</button>
+  </section>
+
+  <!-- 3문: 점성 -->
+  <section class="screen" id="screen-astro">
+    <div class="gate-hanja">第三門 · 占星</div>
+    <div class="gate-title">별의 문</div>
+    <p class="gate-sub">같은 순간, 서쪽 하늘은 그대를 이렇게 기록했습니다.</p>
+    <div class="panel" id="astro-zodiac"></div>
+    <div class="panel" id="astro-moon"></div>
+    <button class="primary" id="btn-astro-next">얼굴의 문으로</button>
+  </section>
+
+  <!-- 4문: 관상 -->
+  <section class="screen" id="screen-face">
+    <div class="gate-hanja">第四門 · 觀相</div>
+    <div class="gate-title">얼굴의 문</div>
+    <p class="gate-sub">거울을 보듯, 그대의 얼굴과 가장 가까운 모양을 골라주세요.</p>
+    <div id="face-parts"></div>
+    <button class="primary" id="btn-face-next" disabled>손의 문으로</button>
+  </section>
+
+  <!-- 5문: 손금 -->
+  <section class="screen" id="screen-palm">
+    <div class="gate-hanja">第五門 · 手相</div>
+    <div class="gate-title">손의 문</div>
+    <p class="gate-sub">왼손을 펴고, 그 위에 새겨진 세 갈래 강을 이곳에 옮겨 그려주세요.<br>선의 길이와 굽이가 그대로 풀이가 됩니다.</p>
+    <div id="palm-wrap"><canvas id="palm-canvas"></canvas></div>
+    <p class="palm-instruction" id="palm-instruction"></p>
+    <div class="palm-steps" id="palm-steps"></div>
+    <div style="text-align:center"><button class="ghost" id="btn-palm-redo">방금 선 다시 긋기</button></div>
+    <button class="primary" id="btn-palm-next" disabled>시간의 문으로</button>
+  </section>
+
+  <!-- 6문: 주역 -->
+  <section class="screen" id="screen-iching">
+    <div class="gate-hanja">第六門 · 周易</div>
+    <div class="gate-title">시간의 문</div>
+    <p class="gate-sub">마음속으로 지금 가장 궁금한 일을 떠올리고, 세 닢의 동전을 던지세요.</p>
+    <div id="coin-area">
+      <div class="coins"></div>
+      <p class="dim" id="cast-count"></p>
+      <div id="hex-lines"></div>
+    </div>
+    <button class="primary" id="btn-cast">동전을 던지다</button>
+    <div id="iching-result"></div>
+    <button class="primary" id="btn-iching-next" style="display:none">그림의 문으로</button>
+  </section>
+
+  <!-- 7문: 타로 -->
+  <section class="screen" id="screen-tarot">
+    <div class="gate-hanja">第七門 · 타로</div>
+    <div class="gate-title">그림의 문</div>
+    <p class="gate-sub" id="tarot-guide"></p>
+    <div id="tarot-deck"></div>
+    <div id="tarot-picked"></div>
+    <button class="primary" id="btn-tarot-next" style="display:none">직조실로 들다</button>
+  </section>
+
+  <!-- 직조 애니메이션 -->
+  <section class="screen" id="screen-weaving">
+    <div id="weaving-anim">
+      <div class="loom">🧵</div>
+      <p>일곱 문에서 모은 실을 한 폭으로 직조하는 중…</p>
+    </div>
+  </section>
+
+  <!-- 최종 리포트 -->
+  <section class="screen" id="screen-report">
+    <div class="gate-hanja">織造室</div>
+    <div class="gate-title">직조된 운명</div>
+    <p class="gate-sub">일곱 점괘가 한 폭으로 짜였습니다.</p>
+
+    <div class="panel" id="report-fusion"></div>
+    <div id="report-gates"></div>
+    <div class="panel" id="report-lucky"></div>
+
+    <div class="panel" style="padding:14px">
+      <div class="report-head" style="justify-content:center;margin:6px 0 12px"><span class="ico">🛡</span>나의 운명 문장(紋章)</div>
+      <canvas id="sigil-canvas"></canvas>
+      <button class="ghost" id="btn-save-sigil" style="display:block;margin:12px auto 0">문장 이미지로 간직하기</button>
+    </div>
+
+    <div class="fable-box" id="report-fable"></div>
+
+    <button class="primary" id="btn-restart">다른 운명을 직조하러</button>
+    <p class="disclaimer" style="text-align:center">※ 이 리딩은 전통 점술의 상징을 빌린 창작 이야기입니다. 중요한 결정은 언제나 그대의 몫입니다.</p>
+  </section>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
