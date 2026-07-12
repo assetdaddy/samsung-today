@@ -66,6 +66,7 @@
     <div id="saju-intro"></div>
     <div class="pillars" id="saju-pillars"></div>
     <div class="panel" id="saju-daymaster"></div>
+    <div class="panel" id="saju-palace"></div>
     <div class="panel" id="saju-paza"></div>
     <div class="panel" id="saju-ilju"></div>
     <div class="panel" id="saju-elements"></div>
@@ -165,6 +166,34 @@
     <button class="primary" id="btn-tarot-back" style="display:none">대문으로 돌아가다</button>
   </section>
 
+  <!-- 궁합 -->
+  <section class="screen" id="screen-gunghap">
+    <div class="gate-hanja">宮合</div>
+    <div class="gate-title">인연의 문</div>
+    <p class="gate-sub">두 사람의 사주로 인연의 결을 봅니다. 나와 상대의 생년월일시를 적어 주세요.</p>
+    <div id="gunghap-intro"></div>
+    <div id="gunghap-form">
+      <div class="panel gh-person">
+        <h3>나 <span class="dim">(먼저 볼 사람)</span></h3>
+        <div class="form-row"><label>이름</label><input type="text" id="gh-a-name" maxlength="12" placeholder="나"></div>
+        <div class="form-row"><label>생년월일 (양력)</label><input type="date" id="gh-a-birth" min="1900-01-01" max="2100-12-31"></div>
+        <div class="form-row"><label>태어난 시각</label><input type="time" id="gh-a-time">
+          <div class="check-row"><input type="checkbox" id="gh-a-unknown"><label for="gh-a-unknown" style="color:var(--ink-dim);margin:0">시간 모름</label></div></div>
+      </div>
+      <div class="gh-heart">❤</div>
+      <div class="panel gh-person">
+        <h3>상대 <span class="dim">(마음에 둔 사람)</span></h3>
+        <div class="form-row"><label>이름</label><input type="text" id="gh-b-name" maxlength="12" placeholder="상대"></div>
+        <div class="form-row"><label>생년월일 (양력)</label><input type="date" id="gh-b-birth" min="1900-01-01" max="2100-12-31"></div>
+        <div class="form-row"><label>태어난 시각</label><input type="time" id="gh-b-time">
+          <div class="check-row"><input type="checkbox" id="gh-b-unknown"><label for="gh-b-unknown" style="color:var(--ink-dim);margin:0">시간 모름</label></div></div>
+      </div>
+      <button class="primary" id="gh-go">두 사람의 궁합 보기</button>
+    </div>
+    <div id="gunghap-result"></div>
+    <button class="primary" id="btn-gunghap-back" style="display:none">대문으로 돌아가다</button>
+  </section>
+
   <!-- 직조 애니메이션 -->
   <section class="screen" id="screen-weaving">
     <div id="weaving-anim">
@@ -190,6 +219,7 @@
 
     <div class="fable-box" id="report-fable"></div>
 
+    <div class="share-bar" id="report-share"></div>
     <button class="primary" id="btn-report-back">대문으로 돌아가다</button>
     <p class="disclaimer" style="text-align:center">※ 이 리딩은 전통 점술의 상징을 빌린 창작 이야기입니다. 중요한 결정은 언제나 그대의 몫입니다.</p>
   </section>

@@ -164,7 +164,48 @@ function applyContentOverrides(ov = loadOverrides()) {
   return n;
 }
 
+// ---------- 실제 DB 연동(REST 어댑터) ----------
+// 로컬(localStorage)이 1차 저장소. 원격 REST 엔드포인트를 설정하면
+// 관리자에서 서버로 저장(PUT)·서버에서 불러오기(GET)할 수 있고,
+// 앱은 선택적으로 로드 시 원격 콘텐츠를 받아 병합한다.
+const STORE_CFG_KEY = 'chilmun_store_cfg_v1';
+function getStoreCfg() {
+  try { return JSON.parse(localStorage.getItem(STORE_CFG_KEY)) || {}; } catch (_) { return {}; }
+}
+function setStoreCfg(cfg) { localStorage.setItem(STORE_CFG_KEY, JSON.stringify(cfg)); }
+
+function _authHeaders(token, extra) {
+  const h = Object.assign({}, extra || {});
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  return h;
+}
+async function pullRemoteOverrides() {
+  const { endpoint, token } = getStoreCfg();
+  if (!endpoint) throw new Error('원격 엔드포인트가 설정되지 않았습니다.');
+  const res = await fetch(endpoint, { headers: _authHeaders(token) });
+  if (!res.ok) throw new Error('불러오기 실패 (HTTP ' + res.status + ')');
+  return await res.json();
+}
+async function pushRemoteOverrides(ov) {
+  const { endpoint, token } = getStoreCfg();
+  if (!endpoint) throw new Error('원격 엔드포인트가 설정되지 않았습니다.');
+  const res = await fetch(endpoint, {
+    method: 'PUT',
+    headers: _authHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify(ov),
+  });
+  if (!res.ok) throw new Error('서버 저장 실패 (HTTP ' + res.status + ')');
+  return true;
+}
+
 // 브라우저(앱)에서 즉시 반영
 if (typeof window !== 'undefined') {
   try { applyContentOverrides(); } catch (_) { /* data.js 미로드 환경 무시 */ }
+  // 원격 자동 로드(설정된 경우) — 받아서 병합 후 화면 갱신 훅 호출
+  const cfg = getStoreCfg();
+  if (cfg.endpoint && cfg.autoLoad) {
+    pullRemoteOverrides()
+      .then(ov => { applyContentOverrides(ov); if (typeof window.onContentRefreshed === 'function') window.onContentRefreshed(); })
+      .catch(() => { /* 오프라인/서버없음: 로컬로 진행 */ });
+  }
 }

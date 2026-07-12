@@ -21,6 +21,9 @@ const MODULES = [
   { id: 'iching', icon: '䷀',  name: '주역',     hanja: '周易',     desc: '동전 세 닢으로 세우는 육효점 — 본괘와 지괘', needsProfile: false },
   { id: 'tarot',  icon: '🂠',  name: '타로',     hanja: 'TAROT',    desc: '메이저 아르카나 22장에서 뽑는 세 장의 길', needsProfile: false },
 ];
+const EXTRA_MODULES = [
+  { id: 'gunghap', icon: '❤', name: '궁합', hanja: '宮合', desc: '두 사람의 사주로 보는 인연의 결 — 십신·합충·오행 상보' },
+];
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -123,6 +126,17 @@ function renderHub() {
       </span>
       <span class="hc-state">${state.done[m.id] ? '다시 보기 ↻' : '문 열기 →'}</span>
     </button>`).join('') + `
+    <div class="hub-divider"><span>인연을 보는 문</span></div>` +
+    EXTRA_MODULES.map(m => `
+    <button class="hub-card extra" data-mod="${m.id}">
+      <span class="hc-icon">${m.icon}</span>
+      <span class="hc-body">
+        <span class="hc-name">${m.name} <span class="hc-hanja">${m.hanja}</span></span>
+        <span class="hc-desc">${m.desc}</span>
+      </span>
+      <span class="hc-state">문 열기 →</span>
+    </button>`).join('') + `
+    <div class="hub-divider"><span>여섯 문을 모두 열면</span></div>
     <button class="hub-card weave ${doneCount === 6 ? '' : 'locked'}" data-mod="weave">
       <span class="hc-icon">🧵</span>
       <span class="hc-body">
@@ -144,7 +158,7 @@ function openModule(id) {
     setTimeout(buildReport, 2400);
     return;
   }
-  const mod = MODULES.find(m => m.id === id);
+  const mod = MODULES.find(m => m.id === id) || EXTRA_MODULES.find(m => m.id === id);
   if (mod.needsProfile && !state.birth) {
     pendingModule = id;
     fillProfileForm();
@@ -157,6 +171,7 @@ function openModule(id) {
   if (id === 'palm') initPalm();
   if (id === 'iching') initIching();
   if (id === 'tarot') initTarot();
+  if (id === 'gunghap') { initGunghap(); }
   show(id);
 }
 
@@ -235,6 +250,26 @@ function renderSaju() {
     <p style="margin-top:10px"><span class="keyword-chip">${det.gyeok || '격국 미상'}</span><span class="keyword-chip">${det.strength}</span>
     <span class="dim">— 월지에서 얻은 그릇의 이름과, 기운의 세기입니다.</span></p>`;
 
+  // 근묘화실(根苗花實) — 네 기둥의 궁위 해석
+  const palaceOrder = ['year', 'month', 'day', 'hour'];
+  $('#saju-palace').innerHTML = `
+    <h3>네 기둥이 맡은 인생 — 근묘화실(根苗花實)</h3>
+    <p class="dim" style="margin-bottom:12px">한 사람의 사주는 뿌리→싹→꽃→열매로 이어지는 한 그루 나무입니다. 각 기둥은 인생의 한 시절과 한 인연을 맡습니다.</p>
+    ${palaceOrder.map(k => {
+      const pal = PILLAR_PALACE[k], p = s.pillars[k], dd = det.detail[k];
+      if (!p) return `<div class="palace-row"><div class="pal-badge">${pal.gung}</div><div class="pal-body"><b>${pal.label}</b> · ${pal.period}<br><span class="dim">시주 정보가 없어 이 자리는 비워 둡니다.</span></div></div>`;
+      const st = STEMS[p[0]], br = BRANCHES[p[1]];
+      const godForStar = (k === 'day') ? dd.branchGod : dd.stemGod;
+      return `<div class="palace-row">
+        <div class="pal-badge">${pal.gung}<span class="pal-glyph"><span class="el-${st.el}">${st.hanja}</span><span class="el-${br.el}">${br.hanja}</span></span></div>
+        <div class="pal-body">
+          <b>${pal.label}</b> · ${pal.period}
+          <p style="margin:5px 0">${pal.role}</p>
+          <p class="dim">${pal.star(godForStar)} 십이운성은 ${dd.stage}.</p>
+        </div>
+      </div>`;
+    }).join('')}`;
+
   // 파자(破字) — 원국 여덟 글자를 쪼개 읽기 (중복 글자는 한 번만)
   const pillarKeys = ['day', 'month', 'year', 'hour']; // 일주를 먼저 (가장 중요)
   const pLabel = { day: '일간·일지 (나 자신과 그 안방)', month: '월주 (사회·부모)', year: '연주 (뿌리·조상)', hour: '시주 (말년·자식)' };
@@ -268,14 +303,22 @@ function renderSaju() {
 
   // 4) 오행 분포
   const total = Object.values(s.elCount).reduce((a, b) => a + b, 0) || 1;
-  $('#saju-elements').innerHTML = '<h3>팔자 속 오행의 물결</h3><div class="el-bars">' +
+  const maxEl = Math.max(...ELEMENTS.map(el => s.elCount[el]));
+  const elComments = ELEMENTS.map(el => {
+    const n = s.elCount[el];
+    if (n === 0) return ELEMENT_BALANCE_TEXT.없음(el);
+    if (n === maxEl && n >= 3) return ELEMENT_BALANCE_TEXT.많음(el);
+    return null;
+  }).filter(Boolean);
+  $('#saju-elements').innerHTML = '<h3>오행 분석 — 팔자 속 다섯 기운의 균형</h3><div class="el-bars">' +
     ELEMENTS.map(el => {
       const n = s.elCount[el];
       return `<div class="el-bar-row">
         <span class="el-name el-${el}">${el} ${ELEMENT_INFO[el].hanja}</span>
         <div class="el-bar-track"><div class="el-bar-fill" style="width:${(n / total) * 100}%;background:${ELEMENT_INFO[el].color}"></div></div>
         <span class="dim">${n}</span></div>`;
-    }).join('') + '</div>';
+    }).join('') + '</div>' +
+    (elComments.length ? elComments.map(c => `<p style="margin-top:10px">${c}</p>`).join('') : '<p style="margin-top:10px" class="dim">다섯 기운이 비교적 고르게 자리했습니다 — 치우침이 적은 균형형입니다.</p>');
 
   // 5) 신강약 + 용신
   const yEl = ELEMENT_INFO[det.yongEl];
@@ -291,18 +334,35 @@ function renderSaju() {
     <p style="margin-top:10px"><b class="el-${det.yongEl}">용신(用神) — ${det.yongEl}(${yEl.hanja}) · ${det.yongGroup}</b><br>
     ${yEl.weakText} <span class="dim">(간이 억부법 기준)</span></p>`;
 
-  // 6) 십신 10종 분포
+  // 6) 십신 10종 심층 분석
   const gEntries = Object.entries(det.godCount).sort((a, b) => b[1] - a[1]);
   const topGod = gEntries[0][0];
+  const presentGods = gEntries.filter(([g, n]) => n > 0).map(([g]) => g);
+  const deepCard = (g, isTop) => {
+    const info = TEN_GODS_10[g], deep = TEN_GODS_DEEP[g];
+    return `<details class="god-deep ${isTop ? 'top' : ''}" ${isTop ? 'open' : ''}>
+      <summary><span class="gd-name">${g} <span class="gd-hanja">${info.hanja}</span></span>
+        <span class="gd-cnt">${det.godCount[g]}개</span>${isTop ? '<span class="gd-flag">중심</span>' : ''}</summary>
+      <div class="gd-body">
+        <div class="gd-keys">${deep.keywords.map(k => `<span class="gd-key">${k}</span>`).join('')}</div>
+        <p><b class="gd-lab">심리</b> ${deep.mind}</p>
+        <p><b class="gd-lab light">강점</b> ${deep.light}</p>
+        <p><b class="gd-lab shadow">그림자(과다)</b> ${deep.shadow}</p>
+        <p><b class="gd-lab">직업</b> ${deep.job}</p>
+        <p><b class="gd-lab">관계</b> ${deep.relation}</p>
+      </div>
+    </details>`;
+  };
   $('#saju-gods').innerHTML = `
-    <h3>십신(十神)의 자리 — 팔자에 뜬 별들</h3>
-    <div class="god-grid">${Object.entries(TEN_GODS_10).map(([g, info]) => `
+    <h3>십신(十神) 심층 분석 — 팔자에 뜬 열 개의 별</h3>
+    <div class="god-grid">${Object.entries(TEN_GODS_10).map(([g]) => `
       <div class="god-cell ${det.godCount[g] ? 'has' : ''} ${g === topGod && det.godCount[topGod] ? 'top' : ''}">
         <span class="gname">${g}</span><span class="gcount">${det.godCount[g] || '·'}</span>
       </div>`).join('')}
     </div>
-    ${det.godCount[topGod] ? `<p style="margin-top:12px"><b>가장 빛나는 별 — ${topGod}(${TEN_GODS_10[topGod].hanja})</b>, ${TEN_GODS_10[topGod].short}<br>${TEN_GODS_10[topGod].text}</p>` : ''}
-    <p class="dim" style="margin-top:8px">${TEN_GODS[TEN_GODS_10[topGod].group].desc} 계열이 사주의 중심 흐름입니다.</p>`;
+    <p class="dim" style="margin:12px 0 6px">${TEN_GODS[TEN_GODS_10[topGod].group].desc} 계열이 사주의 중심 흐름입니다. 내 팔자에 <b>실제로 뜬 별</b>을 깊이 펼쳐 봅니다 (눌러서 열기).</p>
+    ${presentGods.map(g => deepCard(g, g === topGod)).join('')}
+    <p class="dim" style="margin-top:10px">※ 없는 십신은 그 분야의 인연이 옅다는 뜻이지 결핍이 아닙니다 — 대운·세운으로 채워지는 자리입니다.</p>`;
 
   // 7) 신살
   $('#saju-sinsal').innerHTML = `
@@ -783,6 +843,9 @@ function buildReport() {
   sc.width = 640; sc.height = 640;
   drawSigil(sc, state, state.fusion, state.seed);
 
+  const rs = $('#report-share');
+  if (rs) mountShareBar('#report-share', shareSession);
+
   show('report');
 }
 
@@ -794,5 +857,180 @@ $('#btn-save-sigil').addEventListener('click', () => {
 });
 $('#btn-report-back').addEventListener('click', () => { renderHub(); show('intro'); });
 
+// ---------- 궁합 ----------
+function readPersonForm(pre) {
+  const birth = $(`#${pre}-birth`).value;
+  const unknown = $(`#${pre}-unknown`).checked;
+  const time = $(`#${pre}-time`).value;
+  if (!birth) return { error: '생년월일을 입력해 주세요.' };
+  if (!unknown && !time) return { error: '태어난 시각을 고르거나 "시간 모름"에 표시해 주세요.' };
+  const [y, m, d] = birth.split('-').map(Number);
+  if (y < 1900 || y > 2100) return { error: '1900~2100년 사이만 볼 수 있습니다.' };
+  let hh = 12, mm = 0;
+  if (!unknown) [hh, mm] = time.split(':').map(Number);
+  return { name: $(`#${pre}-name`).value.trim(), y, m, d, hh, mm, unknown };
+}
+
+function initGunghap() {
+  $('#gunghap-intro').innerHTML = themeIntroHTML('gunghap');
+  $('#gunghap-result').innerHTML = '';
+  $('#gunghap-form').style.display = '';
+  $('#btn-gunghap-back').style.display = 'none';
+  // 프로필 있으면 '나'에 프리필
+  if (state.birth) {
+    $('#gh-a-name').value = state.name === '나그네' ? '' : state.name;
+    $('#gh-a-birth').value = `${state.birth.y}-${String(state.birth.m).padStart(2,'0')}-${String(state.birth.d).padStart(2,'0')}`;
+    if (!state.hourUnknown && state.time) $('#gh-a-time').value = `${String(state.time.hh).padStart(2,'0')}:${String(state.time.mm).padStart(2,'0')}`;
+    $('#gh-a-unknown').checked = state.hourUnknown;
+    $('#gh-a-time').disabled = state.hourUnknown;
+  }
+}
+$('#gh-a-unknown').addEventListener('change', e => { $('#gh-a-time').disabled = e.target.checked; });
+$('#gh-b-unknown').addEventListener('change', e => { $('#gh-b-time').disabled = e.target.checked; });
+
+$('#gh-go').addEventListener('click', () => {
+  const A = readPersonForm('gh-a'), B = readPersonForm('gh-b');
+  if (A.error) { alert('나: ' + A.error); return; }
+  if (B.error) { alert('상대: ' + B.error); return; }
+  const sajuA = calcSaju(A.y, A.m, A.d, A.hh, A.mm, A.unknown);
+  const sajuB = calcSaju(B.y, B.m, B.d, B.hh, B.mm, B.unknown);
+  const g = calcGunghap(sajuA, sajuB);
+  state.gunghap = { A, B, result: g };
+  renderGunghap();
+});
+
+function renderGunghap() {
+  const { A, B, result: g } = state.gunghap;
+  const nameA = A.name || '나', nameB = B.name || '상대';
+  const relClass = (rel) => rel.good === true ? 'good' : rel.good === false ? 'bad' : '';
+  $('#gunghap-form').style.display = 'none';
+  $('#gunghap-result').innerHTML = `
+    <div class="gh-score-card">
+      <div class="gh-names">${nameA} <span class="gh-x">×</span> ${nameB}</div>
+      <div class="gh-ring" style="--pct:${g.score}">
+        <div class="gh-ring-inner"><span class="gh-num">${g.score}</span><span class="gh-unit">점</span></div>
+      </div>
+      <div class="gh-grade">${g.grade.title}</div>
+      <p class="gh-grade-text">${g.grade.text}</p>
+    </div>
+
+    <div class="panel">
+      <h3>서로를 어떻게 느끼는가 — 일간 십신</h3>
+      <p><b>${nameA} → ${nameB}</b> : ${g.aToB}(${TEN_GODS_10[g.aToB].hanja})<br>${g.aRole}</p>
+      <p style="margin-top:10px"><b>${nameB} → ${nameA}</b> : ${g.bToA}(${TEN_GODS_10[g.bToA].hanja})<br>${g.bRole}</p>
+    </div>
+
+    <div class="panel">
+      <h3>두 기운은 당기는가, 부딪는가 — 합충(合冲)</h3>
+      <p><span class="gh-rel ${relClass(g.relYear)}">띠 · ${g.relYear.a}띠 ↔ ${g.relYear.b}띠 : ${g.relYear.tag}</span><br>${g.relYear.text}</p>
+      <p style="margin-top:10px"><span class="gh-rel ${relClass(g.relDay)}">배우자궁(일지) : ${g.relDay.tag}</span><br>${g.relDay.text}</p>
+      <p style="margin-top:10px" class="dim">일간 오행 — ${g.dayHarmonyText}</p>
+    </div>
+
+    <div class="panel">
+      <h3>합치면 오행이 고른가 — 상보(相補)</h3>
+      <div class="el-bars">${ELEMENTS.map(el => {
+        const n = g.merged[el], max = Math.max(...ELEMENTS.map(e=>g.merged[e]),1);
+        return `<div class="el-bar-row"><span class="el-name el-${el}">${el} ${ELEMENT_INFO[el].hanja}</span>
+          <div class="el-bar-track"><div class="el-bar-fill" style="width:${n/max*100}%;background:${ELEMENT_INFO[el].color}"></div></div>
+          <span class="dim">${n}</span></div>`;
+      }).join('')}</div>
+      <p style="margin-top:10px">두 사람의 오행을 합친 그림입니다. 고르게 퍼질수록 서로의 부족한 기운을 채워 주는 관계 — 균형도 <b>${Math.round(g.balanceScore*100)}%</b>.</p>
+    </div>
+
+    <div class="share-bar" id="gh-share"></div>
+    <p class="disclaimer" style="text-align:center">※ 궁합은 참고용 이야기입니다. 두 사람의 마음과 노력이 언제나 사주를 이깁니다.</p>`;
+  mountShareBar('#gh-share', () => shareGunghap());
+  $('#btn-gunghap-back').style.display = 'block';
+}
+$('#btn-gunghap-back').addEventListener('click', () => { renderHub(); show('intro'); });
+
+// ---------- 결과 저장 · 공유 ----------
+function toast(msg) {
+  let t = $('#toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (_) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+    ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); return ok;
+  }
+}
+// 전체 세션을 URL 해시로 직렬화 (사주·점성은 생일에서 재계산, 나머지는 선택 저장)
+function encodeSession() {
+  const s = {
+    n: state.name, b: state.birth, t: state.time, hu: state.hourUnknown, g: state.gender,
+    f: Object.fromEntries(FACE_PARTS.map(p => [p.id, state.face[p.id] ? p.options.indexOf(state.face[p.id]) : null]).filter(e => e[1] !== null)),
+    pa: state.palm.map(p => [PALM_LINES.indexOf(p.line), p.result.isLong ? 1 : 0, p.result.isCurvy ? 1 : 0]),
+    ic: state.iching ? state.iching.lines.map(l => (l.yang ? 1 : 0) * 1 + (l.changing ? 2 : 0)) : null,
+    ta: state.tarot.map(c => [c.n, c.reversed ? 1 : 0]),
+    gh: state.gunghap ? { A: state.gunghap.A, B: state.gunghap.B } : null,
+  };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function shareSession() {
+  const url = location.origin + location.pathname + '#s=' + encodeSession();
+  copyText(url).then(ok => toast(ok ? '공유 링크를 복사했습니다 🔗' : '복사 실패 — 주소창을 직접 복사해 주세요'));
+}
+function shareGunghap() {
+  if (!state.gunghap) return;
+  const g = { A: state.gunghap.A, B: state.gunghap.B };
+  const enc = btoa(unescape(encodeURIComponent(JSON.stringify({ gh: g })))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const url = location.origin + location.pathname + '#s=' + enc;
+  copyText(url).then(ok => toast(ok ? '궁합 링크를 복사했습니다 🔗' : '복사 실패'));
+}
+function mountShareBar(sel, shareFn) {
+  const el = $(sel); if (!el) return;
+  el.innerHTML = `<button class="ghost sb">🔗 결과 링크 복사</button>`;
+  el.querySelector('.sb').addEventListener('click', shareFn);
+}
+function decodeSession(hash) {
+  try {
+    const raw = hash.replace(/^#s=/, '').replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(raw))));
+  } catch (_) { return null; }
+}
+function restoreSession(d) {
+  if (d.b) {
+    state.name = d.n || '나그네'; state.birth = d.b; state.time = d.t; state.hourUnknown = d.hu; state.gender = d.g || '';
+    state.seed = `${state.name}|${d.b.y}-${d.b.m}-${d.b.d}|${d.hu?'x':(d.t?d.t.hh+':'+d.t.mm:'')}|${state.gender}`;
+    state.saju = calcSaju(d.b.y, d.b.m, d.b.d, d.t?d.t.hh:12, d.t?d.t.mm:0, d.hu);
+    state.sajuDetail = calcSajuDetail(state.saju, state.birth, state.gender);
+    state.zodiac = calcZodiac(d.b.m, d.b.d); state.moon = calcMoonPhase(d.b.y, d.b.m, d.b.d);
+    state.done.saju = true; state.done.astro = true;
+  }
+  if (d.f) for (const [pid, idx] of Object.entries(d.f)) { const p = FACE_PARTS.find(x=>x.id===pid); if (p&&p.options[idx]){ state.face[pid]=p.options[idx]; state.done.face=true; } }
+  if (d.pa && d.pa.length) { state.palm = d.pa.map(([li,lng,cv]) => { const line=PALM_LINES[li]; return { line, result:{ isLong:!!lng, isCurvy:!!cv, lengthText: lng?line.long:line.short, shapeText: cv?line.curvy:line.straight } }; }); state.done.palm = true; }
+  if (d.ic) { const lines = d.ic.map(v => ({ yang: (v&1)===1, changing: v>=2 })); state.iching = { ...resolveCasting(lines), lines }; state.done.iching = true; }
+  if (d.ta && d.ta.length) { state.tarot = d.ta.map(([n,r]) => ({ n, reversed: !!r })); state.done.tarot = true; }
+  if (d.gh) {
+    const sA = calcSaju(d.gh.A.y,d.gh.A.m,d.gh.A.d,d.gh.A.hh,d.gh.A.mm,d.gh.A.unknown);
+    const sB = calcSaju(d.gh.B.y,d.gh.B.m,d.gh.B.d,d.gh.B.hh,d.gh.B.mm,d.gh.B.unknown);
+    state.gunghap = { A: d.gh.A, B: d.gh.B, result: calcGunghap(sA, sB) };
+  }
+}
+
+// 콘텐츠가 원격에서 갱신되면 현재 화면 다시 그리기
+window.onContentRefreshed = () => { try { renderHub(); } catch (_) {} };
+
 // ---------- 시작 ----------
-renderHub();
+(function boot() {
+  const hash = location.hash;
+  if (hash.startsWith('#s=')) {
+    const d = decodeSession(hash);
+    if (d) {
+      restoreSession(d);
+      renderHub();
+      history.replaceState(null, '', location.pathname);
+      if (d.gh && !d.b) { initGunghap(); renderGunghap(); show('gunghap'); toast('공유된 궁합을 불러왔습니다'); return; }
+      toast('공유된 결과를 불러왔습니다 — 대문에서 확인하세요');
+      show('intro');
+      return;
+    }
+  }
+  renderHub();
+})();

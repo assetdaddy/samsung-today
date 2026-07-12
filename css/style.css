@@ -400,3 +400,83 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .paza-meta { font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
 .paza-meta b { color: var(--gold); font-size: 15px; }
 .paza-card p { font-size: 14px; color: var(--ink); }
+
+/* ---------- 허브 구분선 · 추가 문 ---------- */
+.hub-divider { display: flex; align-items: center; gap: 12px; margin: 18px 4px 10px; }
+.hub-divider::before, .hub-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.hub-divider span { font-size: 12px; color: var(--ink-dim); letter-spacing: 2px; }
+.hub-card.extra { border-color: rgba(224,90,158,.4); }
+.hub-card.extra .hc-icon { color: #e05a9e; }
+
+/* ---------- 궁합 ---------- */
+#gunghap-form .gh-person h3 { color: var(--gold-bright); }
+.gh-heart { text-align: center; font-size: 30px; color: #e05a9e; margin: -6px 0 6px; }
+.gh-score-card {
+  text-align: center; padding: 26px 20px;
+  border: 1px solid var(--gold); border-radius: 16px; margin-bottom: 16px;
+  background: linear-gradient(160deg, rgba(224,90,158,.16), rgba(26,21,48,.9));
+}
+.gh-names { font-size: 20px; color: var(--ink); letter-spacing: 2px; margin-bottom: 16px; }
+.gh-names .gh-x { color: #e05a9e; margin: 0 6px; }
+.gh-ring {
+  --pct: 0;
+  width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 14px;
+  background: radial-gradient(closest-side, var(--panel-solid) 76%, transparent 77% 100%),
+    conic-gradient(#e05a9e calc(var(--pct)*1%), rgba(255,255,255,.08) 0);
+  display: flex; align-items: center; justify-content: center;
+}
+.gh-ring-inner { display: flex; align-items: baseline; gap: 3px; }
+.gh-num { font-size: 46px; color: var(--gold-bright); font-weight: 600; }
+.gh-unit { font-size: 15px; color: var(--ink-dim); }
+.gh-grade { font-size: 21px; color: var(--gold-bright); letter-spacing: 3px; margin-bottom: 8px; }
+.gh-grade-text { font-size: 14px; color: var(--ink); }
+.gh-rel { display: inline-block; border: 1px solid var(--line); border-radius: 8px; padding: 2px 10px; font-size: 13px; margin-bottom: 4px; }
+.gh-rel.good { border-color: var(--good, #5fb878); color: #8fe0a8; }
+.gh-rel.bad { border-color: var(--danger); color: #f0a59e; }
+
+/* ---------- 공유 바 · 토스트 ---------- */
+.share-bar { display: flex; justify-content: center; gap: 10px; margin: 14px 0 4px; flex-wrap: wrap; }
+.share-bar .ghost { margin-top: 0; }
+#toast {
+  position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%) translateY(20px);
+  background: rgba(20,16,40,.96); border: 1px solid var(--gold); color: var(--gold-bright);
+  padding: 12px 22px; border-radius: 30px; font-size: 14px; z-index: 100;
+  opacity: 0; pointer-events: none; transition: all .35s; backdrop-filter: blur(6px);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- 근묘화실 궁위 ---------- */
+.palace-row { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.palace-row:first-of-type { border-top: none; }
+.pal-badge {
+  flex-shrink: 0; width: 58px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--gold-bright); font-size: 15px;
+}
+.pal-glyph { font-size: 20px; display: flex; flex-direction: column; line-height: 1.2;
+  border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; background: rgba(10,8,24,.5); }
+.pal-body { flex: 1; font-size: 14px; }
+.pal-body b { color: var(--gold); }
+.pal-body p { font-size: 13.5px; }
+
+/* ---------- 십신 심층 카드 ---------- */
+.god-deep { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; overflow: hidden; background: rgba(10,8,24,.4); }
+.god-deep.top { border-color: var(--gold); }
+.god-deep > summary {
+  cursor: pointer; list-style: none; padding: 11px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.god-deep > summary::-webkit-details-marker { display: none; }
+.god-deep > summary::after { content: "▾"; margin-left: auto; color: var(--violet); transition: transform .3s; }
+.god-deep[open] > summary::after { transform: rotate(180deg); }
+.gd-name { color: var(--gold-bright); font-size: 15.5px; letter-spacing: 1px; }
+.gd-hanja { color: var(--violet); font-size: 12px; }
+.gd-cnt { font-size: 12px; color: var(--ink-dim); }
+.gd-flag { font-size: 11px; color: var(--bg); background: var(--gold-bright); border-radius: 10px; padding: 1px 8px; }
+.gd-body { padding: 4px 14px 14px; }
+.gd-keys { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.gd-key { font-size: 11.5px; color: var(--gold); border: 1px solid var(--line); border-radius: 12px; padding: 2px 9px; background: rgba(212,181,106,.06); }
+.gd-body p { font-size: 13.5px; margin-bottom: 8px; }
+.gd-lab { display: inline-block; min-width: 62px; color: var(--gold); font-size: 12.5px; }
+.gd-lab.light { color: #8fe0a8; }
+.gd-lab.shadow { color: #f0a59e; }

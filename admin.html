@@ -91,6 +91,27 @@
       <span class="status" id="db-status">불러온 상태</span>
     </div>
     <p class="note">본문(사람이 읽는 풀이 문장)만 편집 대상입니다. 오행 상생/십신 판정 같은 <b>계산 규칙은 설명서 탭에서 확인만</b> 하세요(수정 불가). 편집 → <b>저장</b>은 이 브라우저에 보관되고, <b>JSON 내보내기</b>로 파일로 백업·공유할 수 있습니다.</p>
+
+    <details class="tbl" id="db-remote" style="margin-bottom:14px">
+      <summary>🔌 실제 DB 연동 (원격 서버) <span class="cnt" id="remote-state">미설정</span></summary>
+      <div class="rows">
+        <p class="note">여러 담당자가 콘텐츠를 공유하려면 REST 서버를 연결하세요. 저장소의 <code>server/server.js</code>를 실행하면 됩니다(<code>node server/server.js</code>). 앱은 평소 로컬에 저장하고, 아래 버튼으로 서버와 동기화합니다.</p>
+        <div class="fld"><label>엔드포인트 URL (GET/PUT)</label>
+          <textarea id="rm-endpoint" style="min-height:38px" placeholder="http://localhost:8787/overrides"></textarea></div>
+        <div class="fld"><label>API 토큰 (선택 · Bearer)</label>
+          <textarea id="rm-token" style="min-height:38px" placeholder="비워두면 인증 없음"></textarea></div>
+        <label class="status" style="display:flex;align-items:center;gap:6px;margin:4px 0 10px">
+          <input type="checkbox" id="rm-autoload"> 앱 시작 시 서버에서 자동으로 콘텐츠 불러오기</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn save" id="rm-savecfg">연동 설정 저장</button>
+          <button class="btn" id="rm-pull">⬇ 서버에서 불러오기</button>
+          <button class="btn" id="rm-push">⬆ 서버로 저장</button>
+          <button class="btn" id="rm-test">연결 테스트</button>
+        </div>
+        <p class="status" id="rm-msg" style="margin-top:8px"></p>
+      </div>
+    </details>
+
     <div id="db-tables"></div>
   </section>
 </main>
@@ -339,6 +360,46 @@ document.getElementById('db-reset').addEventListener('click', ()=>{
   localStorage.removeItem(CONTENT_DB_KEY);
   location.reload();
 });
+
+// ----- DB 연동(원격) -----
+(function initRemote(){
+  const cfg = getStoreCfg();
+  const $ = id => document.getElementById(id);
+  $('rm-endpoint').value = cfg.endpoint || '';
+  $('rm-token').value = cfg.token || '';
+  $('rm-autoload').checked = !!cfg.autoLoad;
+  $('remote-state').textContent = cfg.endpoint ? ('연결: ' + cfg.endpoint) : '미설정';
+  const msg = (t, ok) => { const e=$('rm-msg'); e.textContent=t; e.className='status '+(ok===true?'saved':ok===false?'dirty':''); };
+
+  $('rm-savecfg').onclick = ()=>{
+    setStoreCfg({ endpoint: $('rm-endpoint').value.trim(), token: $('rm-token').value.trim(), autoLoad: $('rm-autoload').checked });
+    $('remote-state').textContent = $('rm-endpoint').value.trim() ? ('연결: '+$('rm-endpoint').value.trim()) : '미설정';
+    msg('✓ 연동 설정을 저장했습니다.', true);
+  };
+  $('rm-test').onclick = async ()=>{
+    setStoreCfg({ endpoint: $('rm-endpoint').value.trim(), token: $('rm-token').value.trim(), autoLoad: $('rm-autoload').checked });
+    msg('연결 확인 중…');
+    try { await pullRemoteOverrides(); msg('✓ 서버 응답 정상 — 연결됨', true); }
+    catch(e){ msg('✗ '+e.message, false); }
+  };
+  $('rm-pull').onclick = async ()=>{
+    if(!confirm('서버의 콘텐츠로 이 브라우저 내용을 덮어씁니다. 계속할까요?')) return;
+    setStoreCfg({ endpoint: $('rm-endpoint').value.trim(), token: $('rm-token').value.trim(), autoLoad: $('rm-autoload').checked });
+    msg('불러오는 중…');
+    try {
+      const ov = await pullRemoteOverrides();
+      overrides = ov || {}; saveOverrides(overrides);
+      msg('✓ 서버에서 불러와 저장했습니다. 새로고침합니다.', true);
+      setTimeout(()=>location.reload(), 700);
+    } catch(e){ msg('✗ '+e.message, false); }
+  };
+  $('rm-push').onclick = async ()=>{
+    setStoreCfg({ endpoint: $('rm-endpoint').value.trim(), token: $('rm-token').value.trim(), autoLoad: $('rm-autoload').checked });
+    msg('서버로 저장 중…');
+    try { await pushRemoteOverrides(overrides); msg('✓ 서버에 저장했습니다.', true); }
+    catch(e){ msg('✗ '+e.message, false); }
+  };
+})();
 
 // 탭 전환
 document.querySelectorAll('.tab').forEach(tab=>{

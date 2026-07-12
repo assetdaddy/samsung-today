@@ -549,3 +549,68 @@ function calcSajuDetail(saju, birth, gender) {
 
   return { detail, godCount, groupCount, strength, ratio, yongGroup, yongEl, gyeok, sinsal, daeun, seun };
 }
+
+/* ============================================================
+   궁합(宮合) 계산
+   ============================================================ */
+function branchRelation(b1, b2) {
+  if (b1 === b2) return '평';
+  const has = (arr) => arr.some(([a, b]) => (a === b1 && b === b2) || (a === b2 && b === b1));
+  if (typeof SAMHAP !== 'undefined' && SAMHAP[b1] === SAMHAP[b2]) return '삼합';
+  if (has(SIX_HARMONY)) return '육합';
+  if (has(SIX_CLASH)) return '충';
+  return '평';
+}
+
+function calcGunghap(sajuA, sajuB) {
+  const aDay = sajuA.dayStem, bDay = sajuB.dayStem;
+  const aYearBr = sajuA.pillars.year[1], bYearBr = sajuB.pillars.year[1];
+  const aDayBr = sajuA.pillars.day[1], bDayBr = sajuB.pillars.day[1];
+
+  // 1) 일간 십신 관계 (양방향)
+  const aToB = tenGodOf(aDay, bDay); // A 입장에서 B는?
+  const bToA = tenGodOf(bDay, aDay);
+
+  // 2) 띠(연지) 관계 · 일지(배우자궁) 관계
+  const relYear = branchRelation(aYearBr, bYearBr);
+  const relDay = branchRelation(aDayBr, bDayBr);
+
+  // 3) 오행 상보성: 합산 분포가 고를수록 좋음
+  const merged = {};
+  for (const el of ELEMENTS) merged[el] = sajuA.elCount[el] + sajuB.elCount[el];
+  const vals = ELEMENTS.map(el => merged[el]);
+  const totalEl = vals.reduce((a, b) => a + b, 0) || 1;
+  const mean = totalEl / 5;
+  const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / 5;
+  const spread = Math.sqrt(variance) / mean; // 낮을수록 균형
+  const balanceScore = Math.max(0, 1 - spread); // 0~1
+
+  // 4) 일간 오행 상생/상극/동일
+  const aEl = STEMS[aDay].el, bEl = STEMS[bDay].el;
+  let dayHarmony, dayHarmonyText;
+  if (aEl === bEl) { dayHarmony = 0.6; dayHarmonyText = `두 사람 모두 ${aEl}(${ELEMENT_INFO[aEl].hanja}) 일간 — 닮은 기질이라 통하지만, 같은 고집이 부딪힐 수 있습니다.`; }
+  else if (GENERATES[aEl] === bEl || GENERATES[bEl] === aEl) { dayHarmony = 1; dayHarmonyText = `${aEl}과(와) ${bEl}이(가) 서로 낳아 주는 상생(相生) 관계 — 한쪽이 다른 쪽을 키워 주는, 흐름이 좋은 궁합입니다.`; }
+  else if (CONTROLS[aEl] === bEl || CONTROLS[bEl] === aEl) { dayHarmony = 0.4; dayHarmonyText = `${aEl}과(와) ${bEl}이(가) 서로 다스리는 상극(相剋) 관계 — 긴장은 있으나, 극(剋)은 잘 쓰면 서로를 다듬는 힘이 됩니다.`; }
+  else { dayHarmony = 0.7; dayHarmonyText = `${aEl}과(와) ${bEl}, 무난히 어우러지는 일간 조합입니다.`; }
+
+  // 종합 점수
+  const relScore = (r) => r === '삼합' ? 1 : r === '육합' ? 0.9 : r === '평' ? 0.55 : 0.35;
+  const score = Math.round(
+    (relScore(relDay) * 0.30 +   // 배우자궁 가장 크게
+     relScore(relYear) * 0.22 +
+     dayHarmony * 0.28 +
+     balanceScore * 0.20) * 100
+  );
+  const grade = GUNGHAP_GRADE.find(g => score >= g.min);
+
+  return {
+    score, grade,
+    aToB, bToA,
+    aRole: GUNGHAP_ROLE[aToB], bRole: GUNGHAP_ROLE[bToA],
+    relYear: { rel: relYear, ...BRANCH_REL_TEXT[relYear], a: BRANCHES[aYearBr].animal, b: BRANCHES[bYearBr].animal },
+    relDay: { rel: relDay, ...BRANCH_REL_TEXT[relDay] },
+    dayHarmonyText,
+    merged, balanceScore,
+    aEl, bEl,
+  };
+}
