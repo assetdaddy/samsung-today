@@ -21,6 +21,7 @@
     <div id="profile-chip"></div>
     <div id="hub-cards"></div>
     <p class="disclaimer">※ 본 점방의 풀이는 전통 상수(象數)를 빌린 이야기이며, 재미와 성찰을 위한 것입니다.</p>
+    <p class="admin-link"><a href="admin.html">🛠 운영자 설명서 · 콘텐츠 DB 관리</a></p>
   </section>
 
   <!-- 프로필 (사주·점성용 생년월일) -->
@@ -88,7 +89,22 @@
   <section class="screen" id="screen-face">
     <div class="gate-hanja">觀相</div>
     <div class="gate-title">얼굴의 문</div>
-    <p class="gate-sub">거울을 보듯, 그대의 얼굴과 가장 가까운 모양을 골라주세요.</p>
+    <p class="gate-sub">얼굴을 정면으로 촬영하거나 사진을 올린 뒤, 사진 속 이목구비와 가장 가까운 모양을 골라주세요.</p>
+    <div class="cam-block">
+      <div class="cam-stage" id="face-stage">
+        <video id="face-video" playsinline muted></video>
+        <img id="face-photo" alt="촬영한 얼굴 사진" hidden>
+        <div class="cam-empty" id="face-empty">📷 아직 얼굴 사진이 없습니다</div>
+        <div class="cam-guide" id="face-guide" hidden></div>
+      </div>
+      <div class="cam-controls">
+        <button class="ghost" id="face-cam-start">카메라 켜기</button>
+        <button class="ghost cam-shot" id="face-cam-shot" hidden>● 촬영</button>
+        <label class="ghost upload-btn">사진 올리기<input type="file" id="face-file" accept="image/*" hidden></label>
+        <button class="ghost" id="face-retake" hidden>다시 찍기</button>
+      </div>
+    </div>
+    <p class="tag-hint" id="face-tag-hint" hidden>사진 속 얼굴을 보며 오관(五官)을 하나씩 골라주세요.</p>
     <div id="face-parts"></div>
     <div id="face-result"></div>
     <button class="primary" id="btn-face-back" style="display:none">대문으로 돌아가다</button>
@@ -98,7 +114,16 @@
   <section class="screen" id="screen-palm">
     <div class="gate-hanja">手相</div>
     <div class="gate-title">손의 문</div>
-    <p class="gate-sub">왼손을 펴고, 그 위에 새겨진 세 갈래 강을 이곳에 옮겨 그려주세요.<br>선의 길이와 굽이가 그대로 풀이가 됩니다.</p>
+    <p class="gate-sub">왼손 손바닥을 펴서 촬영하거나 사진을 올린 뒤, 그 위로 세 갈래 손금을 덧그려 주세요.<br>선의 길이와 굽이가 그대로 풀이가 됩니다. (사진 없이 바로 그려도 됩니다.)</p>
+    <div class="cam-block">
+      <div class="cam-controls">
+        <button class="ghost" id="palm-cam-start">손바닥 카메라 켜기</button>
+        <button class="ghost cam-shot" id="palm-cam-shot" hidden>● 촬영</button>
+        <label class="ghost upload-btn">손 사진 올리기<input type="file" id="palm-file" accept="image/*" hidden></label>
+        <button class="ghost" id="palm-clear-photo" hidden>사진 지우기</button>
+      </div>
+      <video id="palm-video" playsinline muted hidden></video>
+    </div>
     <div id="palm-wrap"><canvas id="palm-canvas"></canvas></div>
     <p class="palm-instruction" id="palm-instruction"></p>
     <div class="palm-steps" id="palm-steps"></div>
@@ -165,6 +190,7 @@
 
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/content-db.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

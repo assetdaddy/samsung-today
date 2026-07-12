@@ -54,10 +54,44 @@ let pendingModule = null; // 프로필 입력 후 이동할 모듈
 
 // ---------- 화면 전환 ----------
 function show(id) {
+  if (id !== 'face' && id !== 'palm') CameraKit.stop(); // 카메라 문을 벗어나면 스트림 종료
   $$('.screen').forEach(s => s.classList.remove('visible'));
   $(`#screen-${id}`).classList.add('visible');
   scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ---------- 공용 카메라 ----------
+const CameraKit = {
+  stream: null,
+  async start(video) {
+    this.stop();
+    const constraints = { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false };
+    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = this.stream;
+    await video.play();
+    return true;
+  },
+  stop() {
+    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+  },
+  supported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); },
+  // 비디오 프레임을 정사각형으로 잘라 dataURL 반환
+  grab(video, size = 720) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const side = Math.min(vw, vh);
+    const sx = (vw - side) / 2, sy = (vh - side) / 2;
+    ctx.drawImage(video, sx, sy, side, side, 0, 0, size, size);
+    return c.toDataURL('image/jpeg', 0.85);
+  },
+  fileToDataURL(file, cb) {
+    const r = new FileReader();
+    r.onload = () => cb(r.result);
+    r.readAsDataURL(file);
+  },
+};
 
 // ---------- 허브 ----------
 function renderHub() {
@@ -299,11 +333,56 @@ function renderAstro() {
 $('#btn-astro-back').addEventListener('click', () => { renderHub(); show('intro'); });
 
 // ---------- 관상 ----------
+state.facePhoto = null;
+
+function setupFaceCamera() {
+  const video = $('#face-video'), photo = $('#face-photo'), empty = $('#face-empty');
+  const bStart = $('#face-cam-start'), bShot = $('#face-cam-shot'), bRetake = $('#face-retake'), file = $('#face-file');
+  const guide = $('#face-guide');
+
+  function showLive() {
+    CameraKit.stop.call(CameraKit); // 재진입 대비
+  }
+  function reset() {
+    CameraKit.stop();
+    video.hidden = true; photo.hidden = true; empty.hidden = false; guide.hidden = true;
+    bStart.hidden = false; bShot.hidden = true; bRetake.hidden = true;
+    bStart.textContent = '카메라 켜기';
+  }
+  function onPhoto(dataURL) {
+    CameraKit.stop();
+    state.facePhoto = dataURL;
+    photo.src = dataURL; photo.hidden = false;
+    video.hidden = true; empty.hidden = true; guide.hidden = true;
+    bStart.hidden = true; bShot.hidden = true; bRetake.hidden = false;
+    $('#face-tag-hint').hidden = false;
+    $('#face-parts').style.display = '';
+  }
+  reset();
+
+  bStart.onclick = async () => {
+    if (!CameraKit.supported()) { alert('이 기기·브라우저에서는 카메라를 쓸 수 없습니다. "사진 올리기"를 이용해 주세요.'); return; }
+    try {
+      await CameraKit.start(video);
+      video.hidden = false; empty.hidden = true; guide.hidden = false;
+      bStart.hidden = true; bShot.hidden = false; bRetake.hidden = true;
+    } catch (e) {
+      alert('카메라를 열 수 없습니다(' + (e.name || '오류') + '). "사진 올리기"를 이용해 주세요.');
+    }
+  };
+  bShot.onclick = () => { if (video.videoWidth) onPhoto(CameraKit.grab(video)); };
+  bRetake.onclick = () => { state.facePhoto = null; photo.removeAttribute('src'); reset(); };
+  file.onchange = (e) => { const f = e.target.files[0]; if (f) CameraKit.fileToDataURL(f, onPhoto); e.target.value = ''; };
+}
+
 function initFace() {
   state.face = {};
+  state.facePhoto = null;
   state.done.face = false;
   $('#face-result').innerHTML = '';
+  $('#face-tag-hint').hidden = true;
   $('#btn-face-back').style.display = 'none';
+  setupFaceCamera();
   $('#face-parts').innerHTML = FACE_PARTS.map(part => `
     <div class="face-part" data-part="${part.id}">
       <div class="fp-head">
@@ -330,6 +409,7 @@ function renderFaceResult() {
   state.done.face = true;
   $('#face-result').innerHTML = `<div class="panel" style="margin-top:18px">
     <h3>얼굴의 지도를 읽다</h3>
+    ${state.facePhoto ? `<img class="result-photo" src="${state.facePhoto}" alt="관상 사진">` : ''}
     ${FACE_PARTS.map(part => {
       const sel = state.face[part.id];
       return `<p style="margin-bottom:10px"><b>${part.name}(${part.hanja})</b> · ${sel.label}<br>${sel.text}</p>`;
@@ -341,15 +421,46 @@ function renderFaceResult() {
 $('#btn-face-back').addEventListener('click', () => { renderHub(); show('intro'); });
 
 // ---------- 손금 ----------
-const palm = { step: 0, strokes: [], drawing: false, points: [] };
+const palm = { step: 0, strokes: [], drawing: false, points: [], photo: null };
+
+function setupPalmCamera() {
+  const video = $('#palm-video');
+  const bStart = $('#palm-cam-start'), bShot = $('#palm-cam-shot'), bClear = $('#palm-clear-photo'), file = $('#palm-file');
+
+  function usePhoto(dataURL) {
+    CameraKit.stop();
+    const img = new Image();
+    img.onload = () => { palm.photo = img; drawPalmBase(); };
+    img.src = dataURL;
+    video.hidden = true;
+    bStart.hidden = false; bStart.textContent = '손바닥 카메라 켜기'; bShot.hidden = true; bClear.hidden = false;
+  }
+  bStart.onclick = async () => {
+    if (!CameraKit.supported()) { alert('이 기기·브라우저에서는 카메라를 쓸 수 없습니다. "손 사진 올리기"를 이용해 주세요.'); return; }
+    try {
+      await CameraKit.start(video);
+      video.hidden = false;
+      bStart.hidden = true; bShot.hidden = false;
+    } catch (e) {
+      alert('카메라를 열 수 없습니다(' + (e.name || '오류') + '). "손 사진 올리기"를 이용해 주세요.');
+    }
+  };
+  bShot.onclick = () => { if (video.videoWidth) usePhoto(CameraKit.grab(video, 640)); };
+  bClear.onclick = () => { palm.photo = null; bClear.hidden = true; drawPalmBase(); };
+  file.onchange = (e) => { const f = e.target.files[0]; if (f) CameraKit.fileToDataURL(f, usePhoto); e.target.value = ''; };
+}
 
 function initPalm() {
-  palm.step = 0; palm.strokes = []; state.palm = [];
+  palm.step = 0; palm.strokes = []; palm.photo = null; state.palm = [];
   state.done.palm = false;
   $('#palm-result').innerHTML = '';
+  $('#palm-video').hidden = true;
+  $('#palm-cam-start').hidden = false; $('#palm-cam-start').textContent = '손바닥 카메라 켜기';
+  $('#palm-cam-shot').hidden = true; $('#palm-clear-photo').hidden = true;
   $('#btn-palm-back').style.display = 'none';
   const c = $('#palm-canvas');
   c.width = 440; c.height = 520;
+  setupPalmCamera();
   drawPalmBase();
   updatePalmUI();
 }
@@ -357,6 +468,16 @@ function initPalm() {
 function drawPalmBase() {
   const c = $('#palm-canvas'), ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
+
+  // 촬영한 손 사진을 배경으로 (있으면 실루엣 대신)
+  if (palm.photo) {
+    const img = palm.photo;
+    const scale = Math.max(c.width / img.width, c.height / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    ctx.drawImage(img, (c.width - dw) / 2, (c.height - dh) / 2, dw, dh);
+    ctx.fillStyle = 'rgba(10,8,24,0.42)'; // 선이 잘 보이도록 살짝 어둡게
+    ctx.fillRect(0, 0, c.width, c.height);
+  } else {
   ctx.save();
   ctx.translate(220, 280);
   ctx.fillStyle = 'rgba(212,181,106,0.07)';
@@ -381,6 +502,7 @@ function drawPalmBase() {
   ctx.strokeStyle = 'rgba(212,181,106,0.25)';
   ctx.stroke();
   ctx.restore();
+  }
 
   palm.strokes.forEach((stroke, i) => {
     ctx.strokeStyle = PALM_LINES[i].color;
@@ -406,8 +528,10 @@ function updatePalmUI() {
 
 function renderPalmResult() {
   state.done.palm = true;
+  const snapshot = $('#palm-canvas').toDataURL('image/jpeg', 0.8);
   $('#palm-result').innerHTML = `<div class="panel" style="margin-top:18px">
     <h3>세 갈래 강을 읽다</h3>
+    <img class="result-photo" src="${snapshot}" alt="손금 도해">
     ${state.palm.map(p => `
       <p style="margin-bottom:10px"><b style="color:${p.line.color}">${p.line.name}</b><br>
       ${p.result.lengthText}<br>${p.result.shapeText}</p>`).join('')}

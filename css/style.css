@@ -344,3 +344,26 @@ input:focus, select:focus { outline: none; border-color: var(--gold); }
 .da-glyph { font-size: 19px; display: flex; flex-direction: column; line-height: 1.25; }
 .da-god { font-size: 11px; color: var(--violet); margin-top: 4px; }
 .da-stage { font-size: 10.5px; color: var(--ink-dim); }
+
+/* ---------- 카메라 (관상·손금) ---------- */
+.admin-link { margin-top: 18px; }
+.admin-link a { color: var(--ink-dim); font-size: 12.5px; text-decoration: none; border-bottom: 1px dashed var(--line); padding-bottom: 2px; }
+.admin-link a:hover { color: var(--gold); }
+.cam-block { margin-bottom: 18px; }
+.cam-stage {
+  position: relative; width: 100%; max-width: 360px; margin: 0 auto 12px;
+  aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--line); background: #120e24;
+  display: flex; align-items: center; justify-content: center;
+}
+.cam-stage video, .cam-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-stage video { transform: scaleX(-1); } /* 셀피 거울 */
+.cam-empty { position: absolute; color: var(--ink-dim); font-size: 14px; }
+.cam-guide { position: absolute; inset: 12%; border: 2px dashed rgba(255, 217, 122, 0.5); border-radius: 50% / 60%; pointer-events: none; }
+.cam-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.cam-controls .ghost { margin-top: 0; }
+.upload-btn { display: inline-flex; align-items: center; }
+.cam-shot { color: var(--danger); border-color: var(--danger); }
+.tag-hint { text-align: center; font-size: 13.5px; color: var(--gold); margin: 4px 0 14px; }
+.result-photo { width: 100%; max-width: 300px; display: block; margin: 0 auto 14px; border-radius: 12px; border: 1px solid var(--line); }
+#palm-video { width: 100%; max-width: 360px; margin: 0 auto 10px; display: block; border-radius: 14px; border: 1px solid var(--line); transform: scaleX(-1); }
