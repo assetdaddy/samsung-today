@@ -511,3 +511,113 @@ button, .hub-card, .face-opt, .tcard-back, .tab { -webkit-tap-highlight-color: t
   .god-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
   .god-cell .gname { font-size: 11px; }
 }
+
+/* ============================================================
+   2025 트렌드 리프레시 — 오로라 배경 · 글래스 카드 · 필 버튼 · 타입 페어링
+   (마지막 로드: 앞선 규칙을 의도적으로 오버라이드)
+   ============================================================ */
+:root {
+  --sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
+  --radius: 18px;
+  --radius-lg: 24px;
+  --glass: rgba(24, 19, 46, 0.55);
+  --glass-line: rgba(180, 160, 240, 0.16);
+  --grad-royal: linear-gradient(135deg, #7c5cff 0%, #b06be0 55%, #ffb877 120%);
+}
+
+/* 오로라 메시 배경 (별밭 위에 은은한 색 안개) */
+body::before, body::after {
+  content: ""; position: fixed; z-index: 0; pointer-events: none;
+  width: 90vw; height: 90vw; max-width: 720px; max-height: 720px;
+  border-radius: 50%; filter: blur(90px); opacity: 0.5;
+}
+body::before { top: -22vh; left: -18vw; background: radial-gradient(circle, rgba(124,92,255,0.55), transparent 70%); animation: drift1 18s ease-in-out infinite alternate; }
+body::after  { bottom: -20vh; right: -18vw; background: radial-gradient(circle, rgba(255,150,110,0.30), rgba(176,107,224,0.25) 45%, transparent 72%); animation: drift2 22s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate(8vw, 10vh) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-6vw, -8vh) scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { body::before, body::after { animation: none; } }
+
+/* 마이크로카피는 산세리프로 (세리프 디스플레이와 페어링) */
+.hub-desc, .hc-desc, .dim, .gate-sub, .disclaimer, .keyword-chip, .gd-key,
+.stage-badge, .pill, .hc-state, .hc-hanja, .check-row, .admin-link,
+.form-row label, .tag-hint { font-family: var(--sans); }
+
+/* 히어로 타이틀 — 그라디언트 텍스트 트렌드 */
+h1.title {
+  font-size: 52px; letter-spacing: 10px;
+  background: linear-gradient(180deg, #fff 0%, #ffd97a 55%, #d4a259 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: none; filter: drop-shadow(0 4px 24px rgba(255,217,122,0.28));
+}
+.subtitle { font-family: var(--sans); letter-spacing: 4px; font-size: 13px; opacity: .85; }
+
+/* 글래스 패널 */
+.panel {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+
+/* 허브 카드 — 프레스 마이크로인터랙션 + 그라디언트 엣지 */
+.hub-card {
+  position: relative; border-radius: var(--radius-lg);
+  background: var(--glass); border: 1px solid var(--glass-line);
+  padding: 18px 18px; gap: 15px;
+  box-shadow: 0 8px 24px -14px rgba(0,0,0,0.7);
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), border-color .2s, box-shadow .2s;
+  backdrop-filter: blur(12px);
+}
+.hub-card:hover { transform: translateY(-2px); border-color: rgba(180,160,240,0.4); box-shadow: 0 16px 34px -16px rgba(124,92,255,0.5); }
+.hub-card:active { transform: scale(.985); }
+.hub-card.done::after {
+  content: "✓"; position: absolute; top: 12px; right: 14px;
+  width: 20px; height: 20px; border-radius: 50%; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--grad-royal); color: #fff;
+}
+.hc-icon {
+  width: 46px; height: 46px; border-radius: 14px; font-size: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(124,92,255,0.12); border: 1px solid var(--glass-line);
+}
+.hub-card.extra .hc-icon { background: rgba(224,90,158,0.14); }
+.hub-card.weave:not(.locked) .hc-icon { background: rgba(255,184,120,0.14); }
+.hc-name { font-size: 17px; }
+.hc-state {
+  font-family: var(--sans); font-size: 11px; color: var(--violet);
+  background: rgba(124,92,255,0.12); border-radius: 20px; padding: 5px 11px;
+}
+
+/* 필(pill) 버튼 — 그라디언트 + 은은한 하이라이트 */
+button.primary {
+  background: var(--grad-royal);
+  border: none; border-radius: 999px;
+  letter-spacing: 2px; font-size: 16.5px; padding: 16px;
+  box-shadow: 0 10px 26px -10px rgba(124,92,255,0.65), inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: transform .16s cubic-bezier(.2,.8,.2,1), filter .2s, box-shadow .2s;
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.06) saturate(1.1); box-shadow: 0 16px 34px -10px rgba(124,92,255,0.75); }
+button.primary:active:not(:disabled) { transform: scale(.97); }
+button.ghost { border-radius: 999px; font-family: var(--sans); }
+
+/* 진행 도트 → 알약형 세그먼트 느낌 유지, 칩 라운드업 */
+.pchip, .keyword-chip, .seven-list span { border-radius: 999px; }
+.pchip { background: var(--glass); border-color: var(--glass-line); }
+
+/* 입력 필드 라운드업 + 포커스 글로우 */
+input[type="text"], input[type="date"], input[type="time"], select {
+  border-radius: 14px; border-color: var(--glass-line); background: rgba(10,8,24,0.6);
+}
+input:focus, select:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,92,255,0.2); }
+
+/* 화면 진입 트랜지션 — 살짝 더 부드럽게 */
+.screen.visible { animation: fadeup .5s cubic-bezier(.2,.8,.2,1); }
+@keyframes fadeup { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* 구분선 라벨도 산세리프 */
+.hub-divider span { font-family: var(--sans); }
+
+/* 설치 버튼 특유의 강조 */
+#btn-install { background: var(--grad-royal); }
